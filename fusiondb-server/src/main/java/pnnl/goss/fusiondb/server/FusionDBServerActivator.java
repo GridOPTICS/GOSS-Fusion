@@ -134,8 +134,8 @@ public class FusionDBServerActivator implements BundleActivator, ManagedService{
         GossRequestHandlerRegistrationService regService = (GossRequestHandlerRegistrationService)
                 registrationServiceTracker.getService();
 
-        //TODO?
-//        regService.addHandlerFromBundleContext(context);
+        
+        regService.addHandlerFromBundleContext(context);
     }
 
 
