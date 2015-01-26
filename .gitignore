@@ -1,0 +1,10 @@
+/build
+fusiondb-server/target/
+fusiondb-server/.settings/
+fusiondb-common/target/
+fusiondb-common/.settings/
+.settings/
+.classpath
+.gradle/
+fusiondb-common/.project
+.project
