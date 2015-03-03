@@ -51,15 +51,17 @@ import java.util.Properties;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.BasicDataSourceFactory;
 import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
 
 import pnnl.goss.core.server.AbstractDataSourceObject;
 import pnnl.goss.core.server.DataSourceObject;
 import pnnl.goss.core.server.DataSourceType;
 import pnnl.goss.fusiondb.util.FusionDBConfiguration;
 
-@Component
+@Component()
 public class FusionDataSource extends AbstractDataSourceObject implements DataSourceObject {
 
+	public static final String CONFIG_PID = "pnnl.goss.fusion";
 	private BasicDataSource connectionPool = null; 
 	
 	private FusionDataSource(){
@@ -134,5 +136,6 @@ public class FusionDataSource extends AbstractDataSourceObject implements DataSo
 	public void onRemoved() {
 		resetInstance();		
 	}
+	
 
 }

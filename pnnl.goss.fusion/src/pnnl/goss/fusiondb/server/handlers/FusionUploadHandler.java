@@ -44,54 +44,83 @@
 */
 package pnnl.goss.fusiondb.server.handlers;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
-import pnnl.goss.core.Request;
-import pnnl.goss.core.UploadRequest;
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+
+import pnnl.goss.core.Response;
 import pnnl.goss.core.UploadResponse;
-import pnnl.goss.core.server.AbstractRequestHandler;
-import pnnl.goss.core.server.annotations.RequestHandler;
-import pnnl.goss.core.server.annotations.RequestItem;
+import pnnl.goss.core.security.AuthorizationHandler;
+import pnnl.goss.core.server.DataSourceRegistry;
+import pnnl.goss.core.server.RequestUploadHandler;
 import pnnl.goss.fusiondb.datamodel.CapacityRequirement;
-import pnnl.goss.fusiondb.requests.RequestCapacityRequirement;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
-
-
-//?? what type?
-@RequestHandler(value = { 
-		@RequestItem(value=RequestCapacityRequirement.class) })
-public class FusionUploadHandler extends AbstractRequestHandler {
+@Component
+public class FusionUploadHandler implements RequestUploadHandler {
 	
-	public UploadResponse handle(Request request) {
+	@ServiceDependency
+	private volatile DataSourceRegistry dsRegistry;
+	
+	@Override
+	public Map<String, Class<? extends AuthorizationHandler>> getHandlerDataTypes() {
+		Map<String, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
+		
+		auths.put(CapacityRequirement.class.getName(), AuthorizeAll.class);
+		
+		return auths;
+	}
+
+	@Override
+	public Response upload(String dataType, Serializable data) {
 		
 		UploadResponse response = null;
 		
-		try{
-			UploadRequest uploadrequest = (UploadRequest)request;
-			
-			Connection connection = FusionDataSource.getInstance().getConnection();
-			System.out.println(connection);
-			Statement statement = connection.createStatement();
-			
-			CapacityRequirement data1 = (CapacityRequirement)uploadrequest.getData();
-			String queryString = "replace into capacity_requirements(`timestamp`,confidence,interval_id,up,down) values "+
-									"('"+data1.getTimestamp()+"',"+data1.getConfidence()+","+data1.getIntervalId()+","+data1.getUp()+","+data1.getDown()+")";
-			System.out.println(queryString);
-			int rows =  statement.executeUpdate(queryString);
-			System.out.println(rows);
-			connection.commit();
-			connection.close();
+		if (dataType.equals(CapacityRequirement.class.getName())){
+			response = saveData((CapacityRequirement)data);
 		}
-		catch(Exception e){
+		else{
 			response = new UploadResponse(false);
-			response.setMessage(e.getMessage());
-			e.printStackTrace();
-			return response;
+			response.setMessage("Unknown datatype: " + dataType + " specified.");
 		}
-		response = new UploadResponse(true);
+		
 		return response;
+	}
+	
+	private UploadResponse saveData(CapacityRequirement data){
+		UploadResponse resp = null;
+		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+		if (ds == null){
+			resp = new UploadResponse(false);
+			resp.setMessage("Unknown fusion datasource");
+		}
+		else{
+			try{
+				Connection connection = ds.getConnection();
+				System.out.println(connection);
+				Statement statement = connection.createStatement();
+				
+				String queryString = "replace into capacity_requirements(`timestamp`,confidence,interval_id,up,down) values "+
+										"('"+data.getTimestamp()+"',"+data.getConfidence()+","+data.getIntervalId()+","+data.getUp()+","+data.getDown()+")";
+				System.out.println(queryString);
+				int rows =  statement.executeUpdate(queryString);
+				System.out.println(rows);
+				connection.commit();
+				connection.close();
+				resp = new UploadResponse(true);
+			}
+			catch(Exception e){
+				resp = new UploadResponse(false);
+				resp.setMessage(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		return resp;
 	}
 
 }

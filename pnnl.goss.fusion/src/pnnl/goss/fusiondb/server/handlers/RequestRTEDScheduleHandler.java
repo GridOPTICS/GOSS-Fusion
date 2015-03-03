@@ -49,20 +49,36 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
 
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
-import pnnl.goss.core.server.AbstractRequestHandler;
-import pnnl.goss.core.server.annotations.RequestHandler;
-import pnnl.goss.core.server.annotations.RequestItem;
+import pnnl.goss.core.security.AuthorizationHandler;
+import pnnl.goss.core.server.DataSourceRegistry;
+import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.datamodel.RTEDSchedule;
 import pnnl.goss.fusiondb.requests.RequestRTEDSchedule;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
-@RequestHandler(value = { 
-		@RequestItem(value=RequestRTEDSchedule.class) })
-public class RequestRTEDScheduleHandler extends AbstractRequestHandler{
+@Component
+public class RequestRTEDScheduleHandler implements RequestHandler {
+
+	@ServiceDependency
+	private volatile DataSourceRegistry dsRegistry;
+	
+	@Override
+	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
+		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
+		
+		auths.put(RequestRTEDSchedule.class, AuthorizeAll.class);
+		
+		return auths;
+	}
 	
 	public DataResponse handle(Request request) {
 
@@ -70,7 +86,8 @@ public class RequestRTEDScheduleHandler extends AbstractRequestHandler{
 
 		try {
 			String dbQuery = "";
-			Connection connection = FusionDataSource.getInstance().getConnection();
+			FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+			Connection connection = ds.getConnection();
 			Statement stmt = connection.createStatement();
 			ResultSet rs = null;
 			
