@@ -50,14 +50,18 @@ import java.util.Properties;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.BasicDataSourceFactory;
+import org.apache.felix.dm.annotation.api.Component;
 
+import pnnl.goss.core.server.AbstractDataSourceObject;
+import pnnl.goss.core.server.DataSourceObject;
+import pnnl.goss.core.server.DataSourceType;
 import pnnl.goss.fusiondb.util.FusionDBConfiguration;
 
-public class FusionDataSource {
+@Component
+public class FusionDataSource extends AbstractDataSourceObject implements DataSourceObject {
 
 	private BasicDataSource connectionPool = null; 
-	private static FusionDataSource instance;
-
+	
 	private FusionDataSource(){
 		try{
 			System.out.println("Connecting to GOSS Metadata store");
@@ -69,35 +73,20 @@ public class FusionDataSource {
 		}
 	}
 
-	public static void resetInstance(){
+	public void resetInstance(){
 		System.out.println("Resetting GridmwMappingDatasource Instance");
-		if(instance!=null){
+		if(connectionPool!=null){
 			try {
-				instance.connectionPool.close();
+				connectionPool.close();
 			} catch (SQLException e) {
 				System.err.println("Error closing gridmw datasource connection");
 			}
-			instance = null;
+			connectionPool = null;
 		}
 	}
 	
-	public static FusionDataSource getInstance(){
-		try{
-			if(instance == null){
-				System.out.println("Creating new data store connection");
-				instance  = new FusionDataSource();
-			}
-			return instance;
-		}
-		catch(Exception e){
-			e.printStackTrace();
-			return null;
-		}
-	}
-
 	public Connection getConnection(){
 		try{
-
 			return connectionPool.getConnection();
 		}
 		catch(SQLException e){
@@ -134,6 +123,16 @@ public class FusionDataSource {
 
 		return (BasicDataSource)BasicDataSourceFactory.createDataSource(properties);
 
+	}
+
+	@Override
+	public DataSourceType getDataSourceType() {
+		return DataSourceType.DS_TYPE_JDBC;
+	}
+
+	@Override
+	public void onRemoved() {
+		resetInstance();		
 	}
 
 }
