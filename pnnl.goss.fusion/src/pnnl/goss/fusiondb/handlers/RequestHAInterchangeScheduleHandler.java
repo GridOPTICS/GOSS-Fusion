@@ -42,85 +42,101 @@
     operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
     under Contract DE-AC05-76RL01830
 */
-package pnnl.goss.fusiondb.server.handlers;
+package pnnl.goss.fusiondb.handlers;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import pnnl.goss.core.Response;
-import pnnl.goss.core.UploadResponse;
+import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
+import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourceRegistry;
-import pnnl.goss.core.server.RequestUploadHandler;
-import pnnl.goss.fusiondb.datamodel.CapacityRequirement;
+import pnnl.goss.core.server.RequestHandler;
+import pnnl.goss.fusiondb.datamodel.HAInterchangeSchedule;
+import pnnl.goss.fusiondb.requests.RequestHAInterchangeSchedule;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
 @Component
-public class FusionUploadHandler implements RequestUploadHandler {
-	
+public class RequestHAInterchangeScheduleHandler implements RequestHandler {
+
+	private static final Logger log = LoggerFactory.getLogger(RequestHAInterchangeScheduleHandler.class);
+			
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
 	
 	@Override
-	public Map<String, Class<? extends AuthorizationHandler>> getHandlerDataTypes() {
-		Map<String, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
-		
-		auths.put(CapacityRequirement.class.getName(), AuthorizeAll.class);
+	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
+		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
+
+		auths.put(RequestHAInterchangeSchedule.class, AuthorizeAll.class);
 		
 		return auths;
 	}
-
-	@Override
-	public Response upload(String dataType, Serializable data) {
-		
-		UploadResponse response = null;
-		
-		if (dataType.equals(CapacityRequirement.class.getName())){
-			response = saveData((CapacityRequirement)data);
-		}
-		else{
-			response = new UploadResponse(false);
-			response.setMessage("Unknown datatype: " + dataType + " specified.");
-		}
-		
-		return response;
-	}
 	
-	private UploadResponse saveData(CapacityRequirement data){
-		UploadResponse resp = null;
-		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
-		if (ds == null){
-			resp = new UploadResponse(false);
-			resp.setMessage("Unknown fusion datasource");
-		}
-		else{
-			try{
-				Connection connection = ds.getConnection();
-				System.out.println(connection);
-				Statement statement = connection.createStatement();
-				
-				String queryString = "replace into capacity_requirements(`timestamp`,confidence,interval_id,up,down) values "+
-										"('"+data.getTimestamp()+"',"+data.getConfidence()+","+data.getIntervalId()+","+data.getUp()+","+data.getDown()+")";
-				System.out.println(queryString);
-				int rows =  statement.executeUpdate(queryString);
-				System.out.println(rows);
-				connection.commit();
-				connection.close();
-				resp = new UploadResponse(true);
+	public DataResponse handle(Request request) {
+
+		Serializable data = null;
+
+		try {
+			
+			String dbQuery = "";
+			FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+			Connection connection = ds.getConnection();
+			Statement stmt = connection.createStatement();
+			ResultSet rs = null;
+			
+			RequestHAInterchangeSchedule request1 = (RequestHAInterchangeSchedule) request;
+			
+			if (request1.getEndTimeStamp() == null) {
+				dbQuery = "select `TimeStamp`, `Int` from fusion.ha_interchange_schedule where `TimeStamp`  ='"+request1.getStartTimestamp()+"'";
+			} else {
+
+				dbQuery = "select `TimeStamp`, `Int` from fusion.ha_interchange_schedule where `TimeStamp`  between '"+request1.getStartTimestamp()+"' and"+
+						" '"+request1.getEndTimeStamp()+"' order by `TimeStamp`";
 			}
-			catch(Exception e){
-				resp = new UploadResponse(false);
-				resp.setMessage(e.getMessage());
-				e.printStackTrace();
+
+			System.out.println(dbQuery);
+			rs = stmt.executeQuery(dbQuery);
+			
+			List<String> timestampsList = new ArrayList<String>();
+			List<Double> valuesList = new ArrayList<Double>();
+			
+			
+			while (rs.next()) {
+				timestampsList.add(rs.getString(1));
+				valuesList.add(rs.getDouble(2));
 			}
+
+			HAInterchangeSchedule haInterchangeSchedule = new HAInterchangeSchedule();
+			haInterchangeSchedule.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
+			haInterchangeSchedule.setValues(valuesList.toArray(new Double[valuesList.size()]));
+			
+			
+			data = haInterchangeSchedule;
+			connection.close();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		return resp;
+
+		DataResponse dataResponse = new DataResponse();
+		dataResponse.setData(data);
+		return dataResponse;
+
 	}
+
+	
 
 }

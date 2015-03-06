@@ -44,34 +44,72 @@
 */
 package pnnl.goss.fusiondb.server.datasources;
 
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Dictionary;
 import java.util.Properties;
+
+import javax.naming.ConfigurationException;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.BasicDataSourceFactory;
 import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.ConfigurationDependency;
+import org.apache.felix.dm.annotation.api.Stop;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.server.AbstractDataSourceObject;
 import pnnl.goss.core.server.DataSourceObject;
 import pnnl.goss.core.server.DataSourceType;
-import pnnl.goss.fusiondb.util.FusionDBConfiguration;
 
-@Component()
+@Component
 public class FusionDataSource extends AbstractDataSourceObject implements DataSourceObject {
 
-	public static final String CONFIG_PID = "pnnl.goss.fusion";
-	private BasicDataSource connectionPool = null; 
+	private static Logger log = LoggerFactory.getLogger(FusionDataSource.class);
 	
-	private FusionDataSource(){
-		try{
-			System.out.println("Connecting to GOSS Metadata store");
-			System.out.println("Using GOSS Metadata store at "+FusionDBConfiguration.getProperty(FusionDBConfiguration.CONFIG_DB_URI));
-			connectionPool = getDataSourceConnection(FusionDBConfiguration.getProperty(FusionDBConfiguration.CONFIG_DB_URI), FusionDBConfiguration.getProperty(FusionDBConfiguration.CONFIG_DB_USER),
-					FusionDBConfiguration.getProperty(FusionDBConfiguration.CONFIG_DB_PW), null);
-		}catch(Exception e){
-			e.printStackTrace();
+	private static final String CONFIG_PID = "pnnl.goss.fusion";
+	
+	private BasicDataSource connectionPool = null;
+	private String PROP_URI = "db.uri";
+	private String PROP_USERNAME = "db.username";
+	private String PROP_PASSWORD = "db.password";
+	private URI dbUri;
+	private String dbUser;
+	private String dbPass;
+	
+	private boolean nullOrEmpty(String data){
+		return (data == null || data.isEmpty());
+	}
+		
+	@ConfigurationDependency(pid=CONFIG_PID)
+	private void update(Dictionary<String, ?> properties) throws ConfigurationException {
+		
+		if (properties != null){
+			String invalidMessage = "";
+			
+			if(nullOrEmpty((String)properties.get(PROP_USERNAME))) {
+				invalidMessage += PROP_USERNAME +" must be specified in config file.";
+			}
+			if(nullOrEmpty((String)properties.get(PROP_PASSWORD))){
+				invalidMessage += PROP_PASSWORD +" must be specified in config file.";
+			}
+			if(nullOrEmpty((String)properties.get(PROP_URI))){
+				invalidMessage += PROP_URI +" must be specified in config file.";
+			}
+			if(nullOrEmpty((String)properties.get(PROP_URI))) {
+				invalidMessage += PROP_URI +" must be specified in config file.";
+			}
+			
+			if (!nullOrEmpty(invalidMessage)){
+				throw new ConfigurationException(invalidMessage);
+			}
+			
+			dbUri = URI.create((String)properties.get(PROP_URI));
+			dbUser = (String)properties.get(PROP_USERNAME);
+			dbPass = (String)properties.get(PROP_PASSWORD);
+			
 		}
 	}
 
@@ -86,15 +124,25 @@ public class FusionDataSource extends AbstractDataSourceObject implements DataSo
 			connectionPool = null;
 		}
 	}
-	
+		
 	public Connection getConnection(){
 		try{
-			return connectionPool.getConnection();
+			if (connectionPool == null){
+				connectionPool = getDataSourceConnection(dbUri.toString(), dbUser, dbPass, null);
+			}
+			
+			return connectionPool.getConnection();	
 		}
 		catch(SQLException e){
 			e.printStackTrace();
 			return null;
+		} catch (Exception e) {
+			log.error("Error creating connection pool", e);
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		return null;
+		
 	}
 
 	/**
@@ -102,7 +150,7 @@ public class FusionDataSource extends AbstractDataSourceObject implements DataSo
 	 * Adds a poolable connection using the passed parameters to connect to the datasource.
 	 * </p>
 	 */
-	public BasicDataSource getDataSourceConnection(String url, String username, String password, String driver) throws Exception {
+	private BasicDataSource getDataSourceConnection(String url, String username, String password, String driver) throws Exception {
 		Properties properties = new Properties();
 
 		// Available properties http://commons.apache.org/proper/commons-dbcp/xref-test/org/apache/commons/dbcp/TestBasicDataSourceFactory.html#50
@@ -135,6 +183,11 @@ public class FusionDataSource extends AbstractDataSourceObject implements DataSo
 	@Override
 	public void onRemoved() {
 		resetInstance();		
+	}
+	
+	@Stop
+	public void stop(){
+		resetInstance();
 	}
 	
 

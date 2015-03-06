@@ -42,30 +42,39 @@
     operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
     under Contract DE-AC05-76RL01830
 */
-
 package pnnl.goss.fusiondb.datamodel;
 
 import java.io.Serializable;
 
-public class HAInterchangeSchedule implements Serializable{
+public class ActualTotalData implements Serializable {
 	
-	private static final long serialVersionUID = 2479470836796049584L;
 	
-	String[] timestamps;
-	Double[] values;
+	private static final long serialVersionUID = -4578077260007053920L;
 	
-	public String[] getTimestamps() {
-		return timestamps;
+	String type;
+	String timestamp;
+	Double value;
+	
+	public String getType() {
+		return type;
 	}
-	public void setTimestamps(String[] timestamps) {
-		this.timestamps = timestamps;
+	public void setType(String type) {
+		this.type = type;
 	}
-	public Double[] getValues() {
-		return values;
+	public Double getValue() {
+		return value;
 	}
-	public void setValues(Double[] values) {
-		this.values = values;
+	public void setValue(Double value) {
+		this.value = value;
 	}
-
+	public String getTimestamp() {
+		return timestamp;
+	}
+	public void setTimestamps(String timestamp) {
+		this.timestamp = timestamp;
+	}
+	
+	
+	
 
 }

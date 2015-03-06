@@ -42,9 +42,8 @@
     operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
     under Contract DE-AC05-76RL01830
 */
-package pnnl.goss.fusiondb.server.handlers;
+package pnnl.goss.fusiondb.handlers;
 
-import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -55,19 +54,25 @@ import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
+import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
-import pnnl.goss.fusiondb.datamodel.RTEDSchedule;
-import pnnl.goss.fusiondb.requests.RequestRTEDSchedule;
+import pnnl.goss.fusiondb.datamodel.CapacityRequirementValues;
+import pnnl.goss.fusiondb.requests.RequestCapacityRequirement;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
 @Component
-public class RequestRTEDScheduleHandler implements RequestHandler {
+public class RequestCapacityRequirementHandler implements RequestHandler {
 
+	private static final Logger log = LoggerFactory.getLogger(RequestCapacityRequirementHandler.class);
+			
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
 	
@@ -75,68 +80,64 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 		
-		auths.put(RequestRTEDSchedule.class, AuthorizeAll.class);
-		
+		auths.put(RequestCapacityRequirement.class, AuthorizeAll.class);
+
 		return auths;
 	}
-	
 	public DataResponse handle(Request request) {
-
-		Serializable data = null;
-
-		try {
-			String dbQuery = "";
-			FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
-			Connection connection = ds.getConnection();
+		
+		DataResponse response = new DataResponse();
+		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+		Connection connection = ds.getConnection();
+		
+		try{
+			
+			RequestCapacityRequirement request1 = (RequestCapacityRequirement)request;
 			Statement stmt = connection.createStatement();
 			ResultSet rs = null;
 			
-			RequestRTEDSchedule request1 = (RequestRTEDSchedule) request;
+			String query = "select * from capacity_requirements where `timestamp` = '"+request1.getTimestamp()+"'";
+			if(request1.getIntervalId()!=0)
+					query += " and interval_id = "+request1.getIntervalId();
 			
-			if (request1.getEndTimeStamp() == null) {
-				dbQuery = "select * from fusion.rte_d_total where `TimeStamp` = '"+request1.getStartTimestamp()+"' order by IntervalID";
-			} else {
-
-				dbQuery = "select * from fusion.rte_d_total where `TimeStamp` between '"+request1.getStartTimestamp()+"' and '"+request1.getEndTimeStamp()+"' and "+
-						"IntervalID <= "+request1.getInterval()+" order by IntervalID";
-			}
-
-			System.out.println(dbQuery);
-			rs = stmt.executeQuery(dbQuery);
+			System.out.println(query);
+			rs = stmt.executeQuery(query);
 			
 			List<String> timestampsList = new ArrayList<String>();
-			List<Integer> intervalList = new ArrayList<Integer>();
-			List<Double> genList = new ArrayList<Double>();
-			List<Double> minList = new ArrayList<Double>();
-			List<Double> maxList = new ArrayList<Double>();
+			List<Integer> confidenceList = new ArrayList<Integer>();
+			List<Integer> intervalIdList = new ArrayList<Integer>();
+			List<Integer> upList = new ArrayList<Integer>();
+			List<Integer> downList = new ArrayList<Integer>();
 			
 			while (rs.next()) {
 				timestampsList.add(rs.getString(1));
-				intervalList.add(rs.getInt(2));
-				genList.add(rs.getDouble(3));
-				minList.add(rs.getDouble(4));
-				maxList.add(rs.getDouble(5));
+				confidenceList.add(rs.getInt(2));
+				intervalIdList.add(rs.getInt(3));
+				upList.add(rs.getInt(4));
+				downList.add(rs.getInt(5));
+				
 			}
 
-			RTEDSchedule rtedSchedule = new RTEDSchedule();
-			rtedSchedule.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
-			rtedSchedule.setIntervals(intervalList.toArray(new Integer[intervalList.size()]));
-			rtedSchedule.setGenValues(genList.toArray(new Double[genList.size()]));
-			rtedSchedule.setMinValues(minList.toArray(new Double[minList.size()]));
-			rtedSchedule.setMaxValues(maxList.toArray(new Double[maxList.size()]));
+			CapacityRequirementValues data = new CapacityRequirementValues();
+			data.setTimestamp(timestampsList.toArray(new String[timestampsList.size()]));
+			data.setConfidence(confidenceList.toArray(new Integer[confidenceList.size()]));
+			data.setIntervalId(intervalIdList.toArray(new Integer[intervalIdList.size()]));
+			data.setUp(upList.toArray(new Integer[upList.size()]));
+			data.setDown(downList.toArray(new Integer[downList.size()]));
 			
+			response.setData(data);
 			connection.close();
-			data = rtedSchedule;
-			
-		} catch (Exception e) {
-			e.printStackTrace();
+		
 		}
-
-		DataResponse dataResponse = new DataResponse();
-		dataResponse.setData(data);
-		return dataResponse;
-
+		catch(Exception e){
+			e.printStackTrace();
+			DataError error = new DataError(e.getMessage());
+			response.setData(error);
+			return response;
+		}
+		return response;
 	}
-
+	
+	
 
 }

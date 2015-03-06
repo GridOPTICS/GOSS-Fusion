@@ -42,8 +42,9 @@
     operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
     under Contract DE-AC05-76RL01830
 */
-package pnnl.goss.fusiondb.server.handlers;
+package pnnl.goss.fusiondb.handlers;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -54,85 +55,90 @@ import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
+import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
-import pnnl.goss.fusiondb.datamodel.CapacityRequirementValues;
-import pnnl.goss.fusiondb.requests.RequestCapacityRequirement;
+import pnnl.goss.fusiondb.datamodel.ForecastTotal;
+import pnnl.goss.fusiondb.requests.RequestForecastTotal;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
 @Component
-public class RequestCapacityRequirementHandler implements RequestHandler {
+public class RequestForecastTotalHandler implements RequestHandler {
 
+	private static final Logger log = LoggerFactory.getLogger(RequestForecastTotalHandler.class);
+			
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
 	
 	@Override
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
-		
-		auths.put(RequestCapacityRequirement.class, AuthorizeAll.class);
 
+		auths.put(RequestForecastTotal.class, AuthorizeAll.class);
+		
 		return auths;
 	}
 	public DataResponse handle(Request request) {
-		
-		DataResponse response = new DataResponse();
-		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
-		Connection connection = ds.getConnection();
-		
-		try{
-			
-			RequestCapacityRequirement request1 = (RequestCapacityRequirement)request;
+
+		Serializable data = null;
+
+		try {
+			String dbQuery = "";
+			FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+			Connection connection = ds.getConnection();
 			Statement stmt = connection.createStatement();
 			ResultSet rs = null;
 			
-			String query = "select * from capacity_requirements where `timestamp` = '"+request1.getTimestamp()+"'";
-			if(request1.getIntervalId()!=0)
-					query += " and interval_id = "+request1.getIntervalId();
+			RequestForecastTotal request1 = (RequestForecastTotal) request;
 			
-			System.out.println(query);
-			rs = stmt.executeQuery(query);
+			String tableName = "rte_"+request1.getType().toString().toLowerCase()+"_forecast";
+
+			if (request1.getEndTimeStamp() == null) {
+				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` = '"+request1.getStartTimestamp()+"' AND IntervalID <= "+request1.getInterval()+" order by IntervalID";
+			} else {
+
+				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` >= '"+request1.getStartTimestamp()+"' and `TimeStamp`<'"+request1.getEndTimeStamp()+"' and "+
+						"IntervalID <="+request1.getInterval()+"  order by `TimeStamp`";
+			}
+
+			System.out.println(dbQuery);
+			rs = stmt.executeQuery(dbQuery);
 			
+			List<Double> valuesList = new ArrayList<Double>();
 			List<String> timestampsList = new ArrayList<String>();
-			List<Integer> confidenceList = new ArrayList<Integer>();
-			List<Integer> intervalIdList = new ArrayList<Integer>();
-			List<Integer> upList = new ArrayList<Integer>();
-			List<Integer> downList = new ArrayList<Integer>();
+			List<Integer> intervalsList = new ArrayList<Integer>();
 			
 			while (rs.next()) {
 				timestampsList.add(rs.getString(1));
-				confidenceList.add(rs.getInt(2));
-				intervalIdList.add(rs.getInt(3));
-				upList.add(rs.getInt(4));
-				downList.add(rs.getInt(5));
+				intervalsList.add(rs.getInt(2));
+				valuesList.add(rs.getDouble(3));
 				
 			}
 
-			CapacityRequirementValues data = new CapacityRequirementValues();
-			data.setTimestamp(timestampsList.toArray(new String[timestampsList.size()]));
-			data.setConfidence(confidenceList.toArray(new Integer[confidenceList.size()]));
-			data.setIntervalId(intervalIdList.toArray(new Integer[intervalIdList.size()]));
-			data.setUp(upList.toArray(new Integer[upList.size()]));
-			data.setDown(downList.toArray(new Integer[downList.size()]));
+			ForecastTotal forecastTotal = new ForecastTotal();
+			forecastTotal.setType(request1.getType().toString());
+			forecastTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
+			forecastTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
+			forecastTotal.setIntervals(intervalsList.toArray(new Integer[intervalsList.size()]));
 			
-			response.setData(data);
+			data = forecastTotal;
 			connection.close();
-		
-		}
-		catch(Exception e){
+			
+		} catch (Exception e) {
 			e.printStackTrace();
-			DataError error = new DataError(e.getMessage());
-			response.setData(error);
-			return response;
 		}
-		return response;
+
+		DataResponse dataResponse = new DataResponse();
+		dataResponse.setData(data);
+		return dataResponse;
+
 	}
-	
-	
+
 
 }

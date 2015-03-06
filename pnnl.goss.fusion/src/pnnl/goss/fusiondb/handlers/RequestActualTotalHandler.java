@@ -42,7 +42,7 @@
     operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
     under Contract DE-AC05-76RL01830
 */
-package pnnl.goss.fusiondb.server.handlers;
+package pnnl.goss.fusiondb.handlers;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -55,51 +55,59 @@ import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
+import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
-import pnnl.goss.fusiondb.datamodel.ForecastTotal;
-import pnnl.goss.fusiondb.requests.RequestForecastTotal;
+import pnnl.goss.fusiondb.datamodel.ActualTotal;
+import pnnl.goss.fusiondb.requests.RequestActualTotal;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
 @Component
-public class RequestForecastTotalHandler implements RequestHandler {
+public class RequestActualTotalHandler implements RequestHandler {
 
+	private static final Logger log = LoggerFactory.getLogger(RequestActualTotalHandler.class);
+			
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
 	
 	@Override
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
-
-		auths.put(RequestForecastTotal.class, AuthorizeAll.class);
+		
+		auths.put(RequestActualTotal.class, AuthorizeAll.class);
 		
 		return auths;
 	}
+
 	public DataResponse handle(Request request) {
 
 		Serializable data = null;
-
+		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+		
 		try {
 			String dbQuery = "";
-			FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
 			Connection connection = ds.getConnection();
 			Statement stmt = connection.createStatement();
 			ResultSet rs = null;
 			
-			RequestForecastTotal request1 = (RequestForecastTotal) request;
+			RequestActualTotal request1 = (RequestActualTotal) request;
 			
-			String tableName = "rte_"+request1.getType().toString().toLowerCase()+"_forecast";
-
-			if (request1.getEndTimeStamp() == null) {
-				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` = '"+request1.getStartTimestamp()+"' AND IntervalID <= "+request1.getInterval()+" order by IntervalID";
+			String tableName = "actual_"+request1.getType().toString().toLowerCase()+"_total";
+			if(request1.getType().toString().toLowerCase().equals("interhchange"))
+				tableName = "actual_interchange_total";
+			
+			if (request1.getEndTimeStamp() != null) {
+				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` between '"+request1.getStartTimestamp()+"'"+
+						" and  '"+request1.getEndTimeStamp()+"' order by `TimeStamp`";
 			} else {
 
-				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` >= '"+request1.getStartTimestamp()+"' and `TimeStamp`<'"+request1.getEndTimeStamp()+"' and "+
-						"IntervalID <="+request1.getInterval()+"  order by `TimeStamp`";
+				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` ='"+request1.getStartTimestamp()+"' order by `TimeStamp`";
 			}
 
 			System.out.println(dbQuery);
@@ -107,22 +115,20 @@ public class RequestForecastTotalHandler implements RequestHandler {
 			
 			List<Double> valuesList = new ArrayList<Double>();
 			List<String> timestampsList = new ArrayList<String>();
-			List<Integer> intervalsList = new ArrayList<Integer>();
 			
 			while (rs.next()) {
 				timestampsList.add(rs.getString(1));
-				intervalsList.add(rs.getInt(2));
-				valuesList.add(rs.getDouble(3));
-				
+				valuesList.add(rs.getDouble(2));
 			}
 
-			ForecastTotal forecastTotal = new ForecastTotal();
-			forecastTotal.setType(request1.getType().toString());
-			forecastTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
-			forecastTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
-			forecastTotal.setIntervals(intervalsList.toArray(new Integer[intervalsList.size()]));
+			ActualTotal actualTotal = new ActualTotal();
+			actualTotal.setType(request1.getType().toString());
+			actualTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
+			actualTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
 			
-			data = forecastTotal;
+			data = actualTotal;
+			
+			stmt.close();
 			connection.close();
 			
 		} catch (Exception e) {
@@ -134,6 +140,5 @@ public class RequestForecastTotalHandler implements RequestHandler {
 		return dataResponse;
 
 	}
-
 
 }

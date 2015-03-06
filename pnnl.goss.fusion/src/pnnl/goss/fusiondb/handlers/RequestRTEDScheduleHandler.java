@@ -41,8 +41,8 @@
     PACIFIC NORTHWEST NATIONAL LABORATORY
     operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
     under Contract DE-AC05-76RL01830
-*/
-package pnnl.goss.fusiondb.server.handlers;
+ */
+package pnnl.goss.fusiondb.handlers;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -55,77 +55,98 @@ import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
+import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
-import pnnl.goss.fusiondb.datamodel.ActualTotal;
-import pnnl.goss.fusiondb.requests.RequestActualTotal;
+import pnnl.goss.fusiondb.datamodel.RTEDSchedule;
+import pnnl.goss.fusiondb.requests.RequestRTEDSchedule;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
 @Component
-public class RequestActualTotalHandler implements RequestHandler {
+public class RequestRTEDScheduleHandler implements RequestHandler {
+
+	private static final Logger log = LoggerFactory
+			.getLogger(RequestRTEDScheduleHandler.class);
 
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
-	
+
 	@Override
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
-		
-		auths.put(RequestActualTotal.class, AuthorizeAll.class);
-		
+
+		auths.put(RequestRTEDSchedule.class, AuthorizeAll.class);
+
 		return auths;
 	}
 
 	public DataResponse handle(Request request) {
 
 		Serializable data = null;
-		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
-		
-		try {
-			String dbQuery = "";
-			Connection connection = ds.getConnection();
-			Statement stmt = connection.createStatement();
-			ResultSet rs = null;
-			
-			RequestActualTotal request1 = (RequestActualTotal) request;
-			
-			String tableName = "actual_"+request1.getType().toString().toLowerCase()+"_total";
-			if(request1.getType().toString().toLowerCase().equals("interhchange"))
-				tableName = "actual_interchange_total";
-			
-			if (request1.getEndTimeStamp() != null) {
-				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` between '"+request1.getStartTimestamp()+"'"+
-						" and  '"+request1.getEndTimeStamp()+"' order by `TimeStamp`";
-			} else {
 
-				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` ='"+request1.getStartTimestamp()+"' order by `TimeStamp`";
+		String dbQuery = "";
+		FusionDataSource ds = (FusionDataSource) dsRegistry
+				.get(FusionDataSource.class.getName());
+		try (Connection connection = ds.getConnection()) {
+			try (Statement stmt = connection.createStatement()) {
+				ResultSet rs = null;
+
+				RequestRTEDSchedule request1 = (RequestRTEDSchedule) request;
+
+				if (request1.getEndTimeStamp() == null) {
+					dbQuery = "select * from fusion.rte_d_total where `TimeStamp` = '"
+							+ request1.getStartTimestamp()
+							+ "' order by IntervalID";
+				} else {
+
+					dbQuery = "select * from fusion.rte_d_total where `TimeStamp` between '"
+							+ request1.getStartTimestamp()
+							+ "' and '"
+							+ request1.getEndTimeStamp()
+							+ "' and "
+							+ "IntervalID <= "
+							+ request1.getInterval()
+							+ " order by IntervalID";
+				}
+
+				log.debug(dbQuery);
+				rs = stmt.executeQuery(dbQuery);
+
+				List<String> timestampsList = new ArrayList<String>();
+				List<Integer> intervalList = new ArrayList<Integer>();
+				List<Double> genList = new ArrayList<Double>();
+				List<Double> minList = new ArrayList<Double>();
+				List<Double> maxList = new ArrayList<Double>();
+
+				while (rs.next()) {
+					timestampsList.add(rs.getString(1));
+					intervalList.add(rs.getInt(2));
+					genList.add(rs.getDouble(3));
+					minList.add(rs.getDouble(4));
+					maxList.add(rs.getDouble(5));
+				}
+
+				RTEDSchedule rtedSchedule = new RTEDSchedule();
+				rtedSchedule.setTimestamps(timestampsList
+						.toArray(new String[timestampsList.size()]));
+				rtedSchedule.setIntervals(intervalList
+						.toArray(new Integer[intervalList.size()]));
+				rtedSchedule.setGenValues(genList.toArray(new Double[genList
+						.size()]));
+				rtedSchedule.setMinValues(minList.toArray(new Double[minList
+						.size()]));
+				rtedSchedule.setMaxValues(maxList.toArray(new Double[maxList
+						.size()]));
+
+				data = rtedSchedule;
 			}
 
-			System.out.println(dbQuery);
-			rs = stmt.executeQuery(dbQuery);
-			
-			List<Double> valuesList = new ArrayList<Double>();
-			List<String> timestampsList = new ArrayList<String>();
-			
-			while (rs.next()) {
-				timestampsList.add(rs.getString(1));
-				valuesList.add(rs.getDouble(2));
-			}
-
-			ActualTotal actualTotal = new ActualTotal();
-			actualTotal.setType(request1.getType().toString());
-			actualTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
-			actualTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
-			
-			data = actualTotal;
-			
-			stmt.close();
-			connection.close();
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

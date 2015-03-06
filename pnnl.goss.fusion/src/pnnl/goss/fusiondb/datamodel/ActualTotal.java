@@ -46,8 +46,6 @@ package pnnl.goss.fusiondb.datamodel;
 
 import java.io.Serializable;
 
-
-
 public class ActualTotal implements Serializable {
 	
 	private static final long serialVersionUID = -2038573022811446784L;
@@ -74,8 +72,4 @@ public class ActualTotal implements Serializable {
 	public void setTimestamps(String[] timestamps) {
 		this.timestamps = timestamps;
 	}
-	
-	
-	
-
 }

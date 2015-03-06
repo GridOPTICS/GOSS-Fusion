@@ -42,96 +42,44 @@
     operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
     under Contract DE-AC05-76RL01830
 */
-package pnnl.goss.fusiondb.server.handlers;
+package pnnl.goss.fusiondb.datamodel;
 
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
 
-import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.Request;
-import pnnl.goss.core.security.AuthorizationHandler;
-import pnnl.goss.core.server.DataSourceRegistry;
-import pnnl.goss.core.server.RequestHandler;
-import pnnl.goss.fusiondb.datamodel.HAInterchangeSchedule;
-import pnnl.goss.fusiondb.requests.RequestHAInterchangeSchedule;
-import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
-
-@Component
-public class RequestHAInterchangeScheduleHandler implements RequestHandler {
-
-	@ServiceDependency
-	private volatile DataSourceRegistry dsRegistry;
+public class ForecastTotalData implements Serializable {
 	
-	@Override
-	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
-		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
-
-		auths.put(RequestHAInterchangeSchedule.class, AuthorizeAll.class);
-		
-		return auths;
+	private static final long serialVersionUID = 1061685296002226689L;
+	
+	String type;
+	Double value;
+	String timestamp;
+	Integer interval;
+	
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
+	public Double getValue() {
+		return value;
+	}
+	public void setValue(Double value) {
+		this.value = value;
+	}
+	public String getTimestamp() {
+		return timestamp;
+	}
+	public void setTimestamp(String timestamp) {
+		this.timestamp = timestamp;
+	}
+	public Integer getInterval() {
+		return interval;
+	}
+	public void setInterval(Integer interval) {
+		this.interval = interval;
 	}
 	
-	public DataResponse handle(Request request) {
-
-		Serializable data = null;
-
-		try {
-			
-			String dbQuery = "";
-			FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
-			Connection connection = ds.getConnection();
-			Statement stmt = connection.createStatement();
-			ResultSet rs = null;
-			
-			RequestHAInterchangeSchedule request1 = (RequestHAInterchangeSchedule) request;
-			
-			if (request1.getEndTimeStamp() == null) {
-				dbQuery = "select `TimeStamp`, `Int` from fusion.ha_interchange_schedule where `TimeStamp`  ='"+request1.getStartTimestamp()+"'";
-			} else {
-
-				dbQuery = "select `TimeStamp`, `Int` from fusion.ha_interchange_schedule where `TimeStamp`  between '"+request1.getStartTimestamp()+"' and"+
-						" '"+request1.getEndTimeStamp()+"' order by `TimeStamp`";
-			}
-
-			System.out.println(dbQuery);
-			rs = stmt.executeQuery(dbQuery);
-			
-			List<String> timestampsList = new ArrayList<String>();
-			List<Double> valuesList = new ArrayList<Double>();
-			
-			
-			while (rs.next()) {
-				timestampsList.add(rs.getString(1));
-				valuesList.add(rs.getDouble(2));
-			}
-
-			HAInterchangeSchedule haInterchangeSchedule = new HAInterchangeSchedule();
-			haInterchangeSchedule.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
-			haInterchangeSchedule.setValues(valuesList.toArray(new Double[valuesList.size()]));
-			
-			
-			data = haInterchangeSchedule;
-			connection.close();
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		DataResponse dataResponse = new DataResponse();
-		dataResponse.setData(data);
-		return dataResponse;
-
-	}
-
 	
-
 }
