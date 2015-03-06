@@ -1,1 +1,15 @@
-Bundle-Version: 0.0.0.${tstamp}
+-buildpath:  \
+	../cnf/plugins/org.apache.felix.dependencymanager.annotation-3.2.0.jar;version=file,\
+	org.apache.felix.dependencymanager,\
+	org.apache.servicemix.bundles.commons-dbcp,\
+	osgi.core,\
+	osgi.cmpn,\
+	pnnl.goss.core.core-api,\
+	pnnl.goss.core.goss-core-server-api,\
+	slf4j.api,\
+	slf4j.simple,\
+	pnnl.goss.core.goss-core-security
+-sub:  \
+	*.bnd
+-runfw: org.apache.felix.framework;version='[4,5]'
+-runee: JavaSE-1.8
