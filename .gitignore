@@ -6,3 +6,4 @@
 *.class
 /bin/
 /bin_test/
+/RemoteSystemsTempFiles/
