@@ -11,7 +11,7 @@
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
     ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-     
+
     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
     ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
     (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -51,44 +51,55 @@ import java.util.Dictionary;
 import java.util.Properties;
 
 import javax.naming.ConfigurationException;
+import javax.sql.ConnectionPoolDataSource;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.BasicDataSourceFactory;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ConfigurationDependency;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
 import org.apache.felix.dm.annotation.api.Stop;
+import org.h2.util.OsgiDataSourceFactory;
+import org.osgi.service.jdbc.DataSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pnnl.goss.core.server.AbstractDataSourceObject;
+import pnnl.goss.core.server.AbstractSqlPooledDatasource;
+import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceObject;
 import pnnl.goss.core.server.DataSourceType;
 
 @Component
-public class FusionDataSource extends AbstractDataSourceObject implements DataSourceObject {
+public class FusionDataSource extends AbstractSqlPooledDatasource implements DataSourceObject, DataSourcePooledJdbc {
 
 	private static Logger log = LoggerFactory.getLogger(FusionDataSource.class);
-	
+
 	private static final String CONFIG_PID = "pnnl.goss.fusion";
-	
-	private BasicDataSource connectionPool = null;
+
+	@ServiceDependency(name="org.h2.util.OsgiDataSourceFactory")
+	private volatile DataSourceFactory factory;
+
+	@ServiceDependency
+	private volatile ConnectionPoolDataSource dataSource;
+	//private BasicDataSource connectionPool = null;
 	private String PROP_URI = "db.uri";
 	private String PROP_USERNAME = "db.username";
 	private String PROP_PASSWORD = "db.password";
 	private URI dbUri;
 	private String dbUser;
 	private String dbPass;
-	
+
 	private boolean nullOrEmpty(String data){
 		return (data == null || data.isEmpty());
 	}
-		
+
 	@ConfigurationDependency(pid=CONFIG_PID)
 	private void update(Dictionary<String, ?> properties) throws ConfigurationException {
-		
+
 		if (properties != null){
 			String invalidMessage = "";
-			
+
 			if(nullOrEmpty((String)properties.get(PROP_USERNAME))) {
 				invalidMessage += PROP_USERNAME +" must be specified in config file.";
 			}
@@ -101,94 +112,113 @@ public class FusionDataSource extends AbstractDataSourceObject implements DataSo
 			if(nullOrEmpty((String)properties.get(PROP_URI))) {
 				invalidMessage += PROP_URI +" must be specified in config file.";
 			}
-			
+
 			if (!nullOrEmpty(invalidMessage)){
 				throw new ConfigurationException(invalidMessage);
 			}
-			
+
 			dbUri = URI.create((String)properties.get(PROP_URI));
 			dbUser = (String)properties.get(PROP_USERNAME);
 			dbPass = (String)properties.get(PROP_PASSWORD);
-			
+			System.out.println("CONFIGURED: "+ dbUri);
+
 		}
 	}
 
-	public void resetInstance(){
-		System.out.println("Resetting GridmwMappingDatasource Instance");
-		if(connectionPool!=null){
-			try {
-				connectionPool.close();
-			} catch (SQLException e) {
-				System.err.println("Error closing gridmw datasource connection");
-			}
-			connectionPool = null;
-		}
-	}
-		
-	public Connection getConnection(){
-		try{
-			if (connectionPool == null){
-				connectionPool = getDataSourceConnection(dbUri.toString(), dbUser, dbPass, null);
-			}
-			
-			return connectionPool.getConnection();	
-		}
-		catch(SQLException e){
-			e.printStackTrace();
-			return null;
-		} catch (Exception e) {
-			log.error("Error creating connection pool", e);
+	@Start
+	public void start() {
+		System.out.println("STARTING DATASOURCE: " + dbUri.toString());
+
+		Properties properties = new Properties();
+		properties.setProperty("url", dbUri.toString());
+		properties.setProperty(OsgiDataSourceFactory.JDBC_USER, dbUser);
+		properties.setProperty(OsgiDataSourceFactory.JDBC_PASSWORD, dbPass);
+		try {
+			setDataSource(factory.createConnectionPoolDataSource(properties));
+			log.debug("getConnection().isClosed(): " + getConnection().isClosed());
+		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
-		
+		//System.out.println("factory is? "+factory);
 	}
 
-	/**
-	 * <p>
-	 * Adds a poolable connection using the passed parameters to connect to the datasource.
-	 * </p>
-	 */
-	private BasicDataSource getDataSourceConnection(String url, String username, String password, String driver) throws Exception {
-		Properties properties = new Properties();
+//	public void resetInstance(){
+//		System.out.println("Resetting GridmwMappingDatasource Instance");
+//		if(connectionPool!=null){
+//			try {
+//				connectionPool.close();
+//			} catch (SQLException e) {
+//				System.err.println("Error closing gridmw datasource connection");
+//			}
+//			connectionPool = null;
+//		}
+//	}
+//
+//	public Connection getConnection(){
+//		try{
+//			if (connectionPool == null){
+//				connectionPool = getDataSourceConnection(dbUri.toString(), dbUser, dbPass, null);
+//			}
+//
+//			return connectionPool.getConnection();
+//		}
+//		catch(SQLException e){
+//			e.printStackTrace();
+//			return null;
+//		} catch (Exception e) {
+//			log.error("Error creating connection pool", e);
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return null;
+//
+//	}
+//
+//	/**
+//	 * <p>
+//	 * Adds a poolable connection using the passed parameters to connect to the datasource.
+//	 * </p>
+//	 */
+//	private BasicDataSource getDataSourceConnection(String url, String username, String password, String driver) throws Exception {
+//		Properties properties = new Properties();
+//
+//		// Available properties http://commons.apache.org/proper/commons-dbcp/xref-test/org/apache/commons/dbcp/TestBasicDataSourceFactory.html#50
+//		if (driver == null || driver.trim().equals("")){
+//			properties.setProperty("driverClassName", "com.mysql.jdbc.Driver");
+//		}
+//		else{
+//			properties.setProperty("driverClassName", driver);
+//		}
+//
+//		Class.forName(properties.getProperty("driverClassName"));
+//
+//		properties.setProperty("url", url);
+//		properties.setProperty("username", username);
+//		properties.setProperty("password", password);
+//
+//		properties.setProperty("maxOpenPreparedStatements", "10");
+//
+//		System.out.println("Connecting datasource to url: "+url+" with user: "+username);
+//
+//		return (BasicDataSource)BasicDataSourceFactory.createDataSource(properties);
+//
+//	}
+//
+//	@Override
+//	public DataSourceType getDataSourceType() {
+//		return DataSourceType.DS_TYPE_JDBC;
+//	}
+//
+//	@Override
+//	public void onRemoved() {
+//		resetInstance();
+//	}
+//
+//	@Stop
+//	public void stop(){
+//		resetInstance();
+//	}
 
-		// Available properties http://commons.apache.org/proper/commons-dbcp/xref-test/org/apache/commons/dbcp/TestBasicDataSourceFactory.html#50
-		if (driver == null || driver.trim().equals("")){
-			properties.setProperty("driverClassName", "com.mysql.jdbc.Driver"); 
-		}
-		else{
-			properties.setProperty("driverClassName", driver);
-		}
-
-		Class.forName(properties.getProperty("driverClassName"));
-
-		properties.setProperty("url", url);
-		properties.setProperty("username", username);
-		properties.setProperty("password", password);
-
-		properties.setProperty("maxOpenPreparedStatements", "10");
-
-		System.out.println("Connecting datasource to url: "+url+" with user: "+username);
-
-		return (BasicDataSource)BasicDataSourceFactory.createDataSource(properties);
-
-	}
-
-	@Override
-	public DataSourceType getDataSourceType() {
-		return DataSourceType.DS_TYPE_JDBC;
-	}
-
-	@Override
-	public void onRemoved() {
-		resetInstance();		
-	}
-	
-	@Stop
-	public void stop(){
-		resetInstance();
-	}
-	
 
 }

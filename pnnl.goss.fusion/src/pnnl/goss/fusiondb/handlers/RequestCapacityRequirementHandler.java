@@ -11,7 +11,7 @@
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
     ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-     
+
     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
     ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
     (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -46,6 +46,7 @@ package pnnl.goss.fusiondb.handlers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,6 +63,7 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
 import pnnl.goss.core.security.AuthorizeAll;
+import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.datamodel.CapacityRequirementValues;
@@ -72,50 +74,50 @@ import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 public class RequestCapacityRequirementHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(RequestCapacityRequirementHandler.class);
-			
+
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
-	
+
 	@Override
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
-		
+
 		auths.put(RequestCapacityRequirement.class, AuthorizeAll.class);
 
 		return auths;
 	}
 	public DataResponse handle(Request request) {
-		
+
 		DataResponse response = new DataResponse();
-		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
-		Connection connection = ds.getConnection();
-		
-		try{
-			
+		DataSourcePooledJdbc ds = (DataSourcePooledJdbc)dsRegistry.get(FusionDataSource.class.getName());
+
+
+		try(Connection connection = ds.getConnection()){
+
 			RequestCapacityRequirement request1 = (RequestCapacityRequirement)request;
 			Statement stmt = connection.createStatement();
 			ResultSet rs = null;
-			
+
 			String query = "select * from capacity_requirements where `timestamp` = '"+request1.getTimestamp()+"'";
 			if(request1.getIntervalId()!=0)
 					query += " and interval_id = "+request1.getIntervalId();
-			
+
 			System.out.println(query);
 			rs = stmt.executeQuery(query);
-			
+
 			List<String> timestampsList = new ArrayList<String>();
 			List<Integer> confidenceList = new ArrayList<Integer>();
 			List<Integer> intervalIdList = new ArrayList<Integer>();
 			List<Integer> upList = new ArrayList<Integer>();
 			List<Integer> downList = new ArrayList<Integer>();
-			
+
 			while (rs.next()) {
 				timestampsList.add(rs.getString(1));
 				confidenceList.add(rs.getInt(2));
 				intervalIdList.add(rs.getInt(3));
 				upList.add(rs.getInt(4));
 				downList.add(rs.getInt(5));
-				
+
 			}
 
 			CapacityRequirementValues data = new CapacityRequirementValues();
@@ -124,12 +126,11 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 			data.setIntervalId(intervalIdList.toArray(new Integer[intervalIdList.size()]));
 			data.setUp(upList.toArray(new Integer[upList.size()]));
 			data.setDown(downList.toArray(new Integer[downList.size()]));
-			
+
 			response.setData(data);
-			connection.close();
-		
+
 		}
-		catch(Exception e){
+		catch(SQLException e){
 			e.printStackTrace();
 			DataError error = new DataError(e.getMessage());
 			response.setData(error);
@@ -137,7 +138,7 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 		}
 		return response;
 	}
-	
-	
+
+
 
 }

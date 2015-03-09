@@ -3,11 +3,6 @@
 	osgi.enterprise;version='[4.2.0,4.2.1)',\
 	osgi.residential;version='[4.3.0,4.3.1)',\
 	org.apache.servicemix.bundles.commons-dbcp,\
-	org.apache.servicemix.bundles.junit,\
-	org.knowhowlab.osgi.testing.assertions,\
-	org.knowhowlab.osgi.testing.utils,\
-	slf4j.api,\
-	slf4j.simple,\
 	org.amdatu.testing.configurator,\
 	org.apache.felix.dependencymanager,\
 	org.apache.felix.dependencymanager.runtime,\
@@ -18,77 +13,22 @@
 	pnnl.goss.core.goss-core-server-api,\
 	pnnl.goss.core.security-propertyfile,\
 	org.apache.shiro.core,\
-	org.apache.activemq.shiro
+	org.apache.activemq.shiro,\
+	org.h2,\
+	osgi.cmpn;version=4.3,\
+	osgi.core;version=4.3,\
+	biz.aQute.junit
 -runee: JavaSE-1.8
 -runfw: org.apache.felix.framework;version='[4.2.1,5)'
 -runsystempackages:  \
 	sun.reflect
 -runvm: -ea
-Bundle-Version: 0.0.0.${tstamp}
-Private-Package:  \
-	pnnl.goss.fusion.itests
 Test-Cases: ${classes;ANNOTATION;org.junit.Test}
--runrequires:  \
-	osgi.identity;filter:='(osgi.identity=org.apache.servicemix.bundles.junit)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.fusion.itests)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.fusion.goss-fusion-api)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.fusion.goss-fusion-datasource)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.fusion.goss-fusion-server)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.core-api)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-client)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-commands)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-exceptions)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-security)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-server)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-server-api)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.security-propertyfile)',\
-	osgi.identity;filter:='(osgi.identity=org.glassfish.main.transaction.javax.transaction)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.runtime)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.shell)'
--runbundles:  \
-	ch.qos.logback.classic;version='[1.1.2,1.1.3)',\
-	ch.qos.logback.core;version='[1.1.2,1.1.3)',\
-	com.google.gson;version='[2.3.1,2.3.2)',\
-	com.springsource.com.thoughtworks.xstream;version='[1.3.1,1.3.2)',\
-	com.springsource.javax.jms;version='[1.1.0,1.1.1)',\
-	com.springsource.org.apache.commons.logging;version='[1.1.1,1.1.2)',\
-	com.springsource.org.xmlpull;version='[1.1.4,1.1.5)',\
-	javax.management.j2ee-api;version='[1.1.1,1.1.2)',\
-	javax.xml;version='[1.3.4,1.3.5)',\
-	javax.xml.stream;version='[1.0.1,1.0.2)',\
-	org.amdatu.testing.configurator;version='[3.0.0,3.0.1)',\
-	org.apache.activemq.activemq-osgi;version='[5.11.1,5.11.2)',\
-	org.apache.activemq.shiro;version='[5.11.1,5.11.2)',\
-	org.apache.aries.blueprint;version='[1.1.0,1.1.1)',\
-	org.apache.aries.proxy.api;version='[1.0.0,1.0.1)',\
-	org.apache.aries.util;version='[1.1.0,1.1.1)',\
-	org.apache.felix.configadmin;version='[1.8.0,1.8.1)',\
-	org.apache.felix.dependencymanager;version='[3.1.0,3.1.1)',\
-	org.apache.geronimo.specs.geronimo-jta_1.1_spec;version='[1.1.1,1.1.2)',\
-	org.apache.httpcomponents.httpclient;version='[4.2.3,4.2.4)',\
-	org.apache.httpcomponents.httpcore;version='[4.2.3,4.2.4)',\
-	org.apache.servicemix.bundles.commons-dbcp;version='[1.4.0,1.4.1)',\
-	org.apache.servicemix.bundles.junit;version='[4.9.0,4.9.1)',\
-	org.apache.shiro.core;version='[1.2.3,1.2.4)',\
-	org.fusesource.hawtbuf.hawtbuf;version='[1.11.0,1.11.1)',\
-	org.fusesource.hawtdispatch.hawtdispatch;version='[1.21.0,1.21.1)',\
-	org.fusesource.hawtdispatch.hawtdispatch-transport;version='[1.21.0,1.21.1)',\
-	org.fusesource.stompjms.stompjms-client;version='[1.19.0,1.19.1)',\
-	org.glassfish.javax.ejb;version='[3.1.1,3.1.2)',\
-	org.glassfish.main.transaction.javax.transaction;version='[3.1.2,3.1.3)',\
-	org.objectweb.asm.all;version='[4.1.0,4.1.1)',\
-	osgi.enterprise;version='[4.2.0,4.2.1)',\
-	osgi.residential;version='[4.3.0,4.3.1)',\
-	pnnl.goss.core.core-api;version='[2.0.0,2.0.1)',\
-	pnnl.goss.core.goss-client;version='[2.0.0,2.0.1)',\
-	pnnl.goss.core.goss-core-commands;version='[2.0.0,2.0.1)',\
-	pnnl.goss.core.goss-core-exceptions;version='[2.0.0,2.0.1)',\
-	pnnl.goss.core.goss-core-security;version='[2.0.0,2.0.1)',\
-	pnnl.goss.core.goss-core-server;version='[2.0.0,2.0.1)',\
-	pnnl.goss.core.goss-core-server-api;version='[2.0.0,2.0.1)',\
-	pnnl.goss.core.security-propertyfile;version='[2.0.0,2.0.1)',\
-	pnnl.goss.fusion.goss-fusion-api;version=latest,\
-	pnnl.goss.fusion.goss-fusion-datasource;version=latest,\
-	pnnl.goss.fusion.goss-fusion-server;version=latest,\
-	pnnl.goss.fusion.itests;version=latest,\
-	slf4j.api;version='[1.7.7,1.7.8)'
+-include: ${workspace}/pnnl.goss.fusion.itests/fusion-itests.bndrun
+Bundle-Version: 0.0.0.${tstamp}
+
+Export-Package:  \
+	pnnl.goss.fusion.itests
+
+Include-Resource: \
+	resources/setup.sql=sql/setup.sql
