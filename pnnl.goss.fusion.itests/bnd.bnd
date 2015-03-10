@@ -17,7 +17,9 @@
 	org.h2,\
 	osgi.cmpn;version=4.3,\
 	osgi.core;version=4.3,\
-	biz.aQute.junit
+	biz.aQute.junit,\
+	org.apache.httpcomponents.httpclient,\
+	pnnl.goss.fusion.goss-fusion-api;version=latest
 -runee: JavaSE-1.8
 -runfw: org.apache.felix.framework;version='[4.2.1,5)'
 -runsystempackages:  \

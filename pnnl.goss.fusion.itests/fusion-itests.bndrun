@@ -55,10 +55,9 @@
 	org.apache.felix.gogo.runtime;version='[0.12.1,0.12.2)',\
 	org.apache.felix.gogo.shell;version='[0.10.0,0.10.1)',\
 	org.apache.geronimo.specs.geronimo-jta_1.1_spec;version='[1.1.1,1.1.2)',\
-	org.apache.httpcomponents.httpclient;version='[4.2.3,4.2.4)',\
+	org.apache.httpcomponents.httpclient,\
 	org.apache.httpcomponents.httpcore;version='[4.2.3,4.2.4)',\
-	org.apache.servicemix.bundles.commons-dbcp;version='[1.4.0,1.4.1)',\
-	org.apache.servicemix.bundles.junit;version='[4.9.0,4.9.1)',\
+	org.apache.servicemix.bundles.commons-dbcp,\
 	org.apache.shiro.core;version='[1.2.3,1.2.4)',\
 	org.fusesource.hawtbuf.hawtbuf;version='[1.11.0,1.11.1)',\
 	org.fusesource.hawtdispatch.hawtdispatch;version='[1.21.0,1.21.1)',\
@@ -82,4 +81,7 @@
 	pnnl.goss.fusion.itests;version=latest,\
 	slf4j.api;version='[1.7.7,1.7.8)',\
 	org.amdatu.configurator.properties,\
-	slf4j.simple
+	slf4j.simple,\
+	org.h2,\
+	org.apache.commons.pool,\
+	biz.aQute.junit

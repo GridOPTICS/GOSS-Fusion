@@ -7,7 +7,7 @@ CREATE TABLE capacity_requirements (
   PRIMARY KEY (timestamp,confidence,interval_id)
 );
 
-# TimeStamp, Wind
+-- TimeStamp, Wind
 INSERT INTO capacity_requirements VALUES('2013-01-21 00:00:00', '457.1655900000');
 INSERT INTO capacity_requirements VALUES('2013-01-21 00:01:00', '454.2621300000');
 INSERT INTO capacity_requirements VALUES('2013-01-21 00:02:00', '444.4426400000');

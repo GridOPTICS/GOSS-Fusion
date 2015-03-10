@@ -62,6 +62,7 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
 import pnnl.goss.core.security.AuthorizeAll;
+import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.datamodel.ActualTotal;
@@ -88,7 +89,7 @@ public class RequestActualTotalHandler implements RequestHandler {
 	public DataResponse handle(Request request) {
 
 		Serializable data = null;
-		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+		DataSourcePooledJdbc ds = (DataSourcePooledJdbc)dsRegistry.get(FusionDataSource.class.getName());
 		
 		try {
 			String dbQuery = "";

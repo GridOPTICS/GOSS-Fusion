@@ -30,7 +30,7 @@ public class BasicFakeRealm extends AuthorizingRealm implements GossRealm {
 		acnt = new SimpleAccount("reader", "reader", getName());
 		acnt.addStringPermission("topic:*");
 		acnt.addStringPermission("queue:*");
-		acnt.addStringPermission("temp-queu:*");
+		acnt.addStringPermission("temp-queue:*");
 		
 		builtAccounts.put("reader", acnt);
 		

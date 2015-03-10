@@ -45,50 +45,43 @@
 package pnnl.goss.fusiondb.server.datasources;
 
 import java.net.URI;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Dictionary;
 import java.util.Properties;
 
 import javax.naming.ConfigurationException;
-import javax.sql.ConnectionPoolDataSource;
 
-import org.apache.commons.dbcp.BasicDataSource;
-import org.apache.commons.dbcp.BasicDataSourceFactory;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.felix.dm.annotation.api.Stop;
-import org.h2.util.OsgiDataSourceFactory;
-import org.osgi.service.jdbc.DataSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pnnl.goss.core.server.AbstractSqlPooledDatasource;
-import pnnl.goss.core.server.DataSourcePooledJdbc;
-import pnnl.goss.core.server.DataSourceObject;
-import pnnl.goss.core.server.DataSourceType;
+import pnnl.goss.core.server.DataSourceBuilder;
+import pnnl.goss.core.server.DataSourceRegistry;
 
 @Component
-public class FusionDataSource extends AbstractSqlPooledDatasource implements DataSourceObject, DataSourcePooledJdbc {
+public class FusionDataSource {
 
 	private static Logger log = LoggerFactory.getLogger(FusionDataSource.class);
 
 	private static final String CONFIG_PID = "pnnl.goss.fusion";
-
-	@ServiceDependency(name="org.h2.util.OsgiDataSourceFactory")
-	private volatile DataSourceFactory factory;
-
+	
 	@ServiceDependency
-	private volatile ConnectionPoolDataSource dataSource;
-	//private BasicDataSource connectionPool = null;
+	private volatile DataSourceBuilder builder;
+	
+	@ServiceDependency
+	private volatile DataSourceRegistry registry;
+
 	private String PROP_URI = "db.uri";
 	private String PROP_USERNAME = "db.username";
 	private String PROP_PASSWORD = "db.password";
+	private String PROP_DRIVER = "db.driver";
 	private URI dbUri;
 	private String dbUser;
 	private String dbPass;
+	private String dbDriver;
 
 	private boolean nullOrEmpty(String data){
 		return (data == null || data.isEmpty());
@@ -109,8 +102,11 @@ public class FusionDataSource extends AbstractSqlPooledDatasource implements Dat
 			if(nullOrEmpty((String)properties.get(PROP_URI))){
 				invalidMessage += PROP_URI +" must be specified in config file.";
 			}
-			if(nullOrEmpty((String)properties.get(PROP_URI))) {
-				invalidMessage += PROP_URI +" must be specified in config file.";
+			if(!nullOrEmpty((String)properties.get(PROP_DRIVER))) {
+				dbDriver = (String)properties.get(PROP_DRIVER);
+			}
+			else{
+				dbDriver = "com.mysql.jdbc.Driver";
 			}
 
 			if (!nullOrEmpty(invalidMessage)){
@@ -121,27 +117,47 @@ public class FusionDataSource extends AbstractSqlPooledDatasource implements Dat
 			dbUser = (String)properties.get(PROP_USERNAME);
 			dbPass = (String)properties.get(PROP_PASSWORD);
 			System.out.println("CONFIGURED: "+ dbUri);
+			log.debug("Updated configurations");
 
 		}
 	}
 
 	@Start
-	public void start() {
+	public void start() throws Exception {
 		System.out.println("STARTING DATASOURCE: " + dbUri.toString());
-
+		
 		Properties properties = new Properties();
-		properties.setProperty("url", dbUri.toString());
-		properties.setProperty(OsgiDataSourceFactory.JDBC_USER, dbUser);
-		properties.setProperty(OsgiDataSourceFactory.JDBC_PASSWORD, dbPass);
-		try {
-			setDataSource(factory.createConnectionPoolDataSource(properties));
-			log.debug("getConnection().isClosed(): " + getConnection().isClosed());
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		properties.setProperty(DataSourceBuilder.DATASOURCE_NAME, this.getClass().getName());
+		properties.setProperty(DataSourceBuilder.DATASOURCE_URL, dbUri.toString());
+		properties.setProperty(DataSourceBuilder.DATASOURCE_USER, dbUser);
+		properties.setProperty(DataSourceBuilder.DATASOURCE_PASSWORD, dbPass);
+		properties.setProperty(DataSourceBuilder.DATASOURCE_DRIVER, dbDriver);
+		// Add other specific properties that shoudl be on the object.
+		builder.create(this.getClass().getName(), properties);
+
 		//System.out.println("factory is? "+factory);
 	}
+	
+	@Stop
+	public void stop(){
+		registry.remove(this.getClass().getName());
+	}
+
+//	@Override
+//	public Connection getConnection() throws SQLException {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+//
+//	@Override
+//	public String getName() {
+//		return this.getClass().getName();
+//	}
+//
+//	@Override
+//	public DataSourceType getDataSourceType() {
+//		return null;
+//	}
 
 //	public void resetInstance(){
 //		System.out.println("Resetting GridmwMappingDatasource Instance");

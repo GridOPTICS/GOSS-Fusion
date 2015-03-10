@@ -16,6 +16,7 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
 import pnnl.goss.core.security.AuthorizeAll;
+import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.datamodel.GeneratorData;
@@ -45,7 +46,7 @@ public class RequestGeneratorDataHandler implements RequestHandler {
 
 		DataResponse response = new DataResponse();
 
-		FusionDataSource ds = (FusionDataSource) dsRegistry
+		DataSourcePooledJdbc ds = (DataSourcePooledJdbc) dsRegistry
 				.get(FusionDataSource.class.getName());
 
 		try (Connection connection = ds.getConnection()) {

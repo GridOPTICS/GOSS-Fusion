@@ -62,6 +62,7 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
 import pnnl.goss.core.security.AuthorizeAll;
+import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.datamodel.ForecastTotal;
@@ -90,7 +91,7 @@ public class RequestForecastTotalHandler implements RequestHandler {
 
 		try {
 			String dbQuery = "";
-			FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+			DataSourcePooledJdbc ds = (DataSourcePooledJdbc)dsRegistry.get(FusionDataSource.class.getName());
 			Connection connection = ds.getConnection();
 			Statement stmt = connection.createStatement();
 			ResultSet rs = null;

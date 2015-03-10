@@ -60,6 +60,7 @@ import pnnl.goss.core.Response;
 import pnnl.goss.core.UploadResponse;
 import pnnl.goss.core.security.AuthorizationHandler;
 import pnnl.goss.core.security.AuthorizeAll;
+import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestUploadHandler;
 import pnnl.goss.fusiondb.datamodel.CapacityRequirement;
@@ -136,7 +137,7 @@ public class FusionUploadHandler implements RequestUploadHandler {
 		log.debug("EXEC SQL: " + queryString);
 		int rows = -1;
 
-		FusionDataSource ds = (FusionDataSource)dsRegistry.get(FusionDataSource.class.getName());
+		DataSourcePooledJdbc ds = (DataSourcePooledJdbc)dsRegistry.get(FusionDataSource.class.getName());
 		
 		try (Connection connection = ds.getConnection()){			
 			try (Statement stmt = connection.createStatement()){
