@@ -37,6 +37,7 @@ import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
 import pnnl.goss.core.server.RequestHandler;
+import pnnl.goss.core.server.RequestHandlerRegistry;
 import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.fusiondb.requests.RequestCapacityRequirement;
 
@@ -47,7 +48,7 @@ public class TestHandlers {
 	private volatile ClientFactory clientFactory;
 	
 	private Client client;
-
+	
 	// If this were in a regular Component we would do this.
 	//@ServiceDependency(name="org.h2.util.OsgiDataSourceFactory")
 	//private volatile DataSourceFactory factory;
@@ -58,7 +59,7 @@ public class TestHandlers {
 		testConfig = configure(this)
 				.add(configuration("pnnl.goss.core.server")
 					.set("goss.openwire.uri", "tcp://localhost:6000")
-					.set("goss.stomp.uri",  "tcp://localhost:6001") //vm:(broker:(tcp://localhost:6001)?persistent=false)?marshal=false")
+					.set("goss.stomp.uri",  "tcp://localhost:6001")
 					.set("goss.start.broker", "true")
 					.set("goss.broker.uri", "tcp://localhost:6000"))
 				.add(configuration(ClientFactory.CONFIG_PID)
@@ -69,12 +70,12 @@ public class TestHandlers {
 					.set("db.username", "sa")
 					.set("db.password", "sa")
 					.set("db.driver", "org.h2.Driver"))
-				.add(serviceDependency(ServerControl.class))
+				//.add(serviceDependency(ServerControl.class))
 				.add(serviceDependency(ClientFactory.class))
 				.add(serviceDependency(SecurityManager.class))
-				.add(serviceDependency(GossRealm.class))  // Should require BasicFakeRealm
+				//.add(serviceDependency(GossRealm.class)) //.setDefaultImplementation(new BasicFakeRealm()))  // Should require BasicFakeRealm
 				.add(serviceDependency(DataSourceBuilder.class))
-				.add(serviceDependency(RequestHandler.class))
+				.add(serviceDependency(RequestHandlerRegistry.class))
 				.add(serviceDependency(DataSourceRegistry.class).setRequired(true));
 
 		testConfig.apply();
@@ -103,15 +104,15 @@ public class TestHandlers {
 		return (DataSourcePooledJdbc)dsRegistry.get("pnnl.goss.fusiondb.server.datasources.FusionDataSource");
 	}
 
-	@Test
-	public void testDataSourceWorks(){
-		assertNotNull(dsRegistry);
-		DataSourcePooledJdbc pooled = getConnection();
-		assertNotNull(pooled);
-//		assertTrue(dsRegistry.getAvailable().size()> 0);
-//		assertNotNull(dsObject);
-//		assertEquals(DataSourceType.DS_TYPE_JDBC, dsObject.getDataSourceType());
-	}
+//	@Test
+//	public void testDataSourceWorks(){
+//		assertNotNull(dsRegistry);
+//		DataSourcePooledJdbc pooled = getConnection();
+//		assertNotNull(pooled);
+////		assertTrue(dsRegistry.getAvailable().size()> 0);
+////		assertNotNull(dsObject);
+////		assertEquals(DataSourceType.DS_TYPE_JDBC, dsObject.getDataSourceType());
+//	}
 	
 	@Test
 	public void testGetCapacity(){
@@ -119,10 +120,12 @@ public class TestHandlers {
 		Response resp = client.getResponse(req);
 		assertNotNull(resp);
 		assertTrue("DataRespons it wasn't", resp instanceof DataResponse);
-		assertFalse("Error message thrown", (((DataResponse)resp).getData() instanceof DataError));
+		if ((((DataResponse)resp).getData() instanceof DataError)){
+			DataError err = (DataError)((DataResponse)resp).getData();
+			System.out.println("Error Message thrown: "+ err.getMessage());
+			fail("A DataError was thrown on server");
+		}
 		
-		
-		//, '455.8664400000');
 		
 	}
 	

@@ -1,4 +1,4 @@
 Private-Package:  \
-	pnnl.goss.fusiondb.server.datasources,\
-	pnnl.goss.fusiondb.server.handlers,\
-	pnnl.goss.fusiondb.util
+	pnnl.goss.fusiondb.handlers,\
+	pnnl.goss.fusiondb.server.datasources
+	
