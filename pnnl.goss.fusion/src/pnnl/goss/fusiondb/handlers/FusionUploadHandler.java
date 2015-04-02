@@ -59,10 +59,10 @@ import org.slf4j.LoggerFactory;
 import pnnl.goss.core.Response;
 import pnnl.goss.core.UploadResponse;
 import pnnl.goss.core.security.AuthorizationHandler;
-import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestUploadHandler;
+import pnnl.goss.fusiondb.auth.FusionUploadAuthHandler;
 import pnnl.goss.fusiondb.datamodel.CapacityRequirement;
 import pnnl.goss.fusiondb.datamodel.GeneratorData;
 import pnnl.goss.fusiondb.datamodel.InterfacesViolation;
@@ -89,7 +89,7 @@ public class FusionUploadHandler implements RequestUploadHandler {
 	public Map<String, Class<? extends AuthorizationHandler>> getHandlerDataTypes() {
 		Map<String, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 		
-		auths.put(CapacityRequirement.class.getName(), AuthorizeAll.class);
+		auths.put(CapacityRequirement.class.getName(), FusionUploadAuthHandler.class);
 		
 		return auths;
 	}

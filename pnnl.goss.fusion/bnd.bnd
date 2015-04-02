@@ -11,7 +11,9 @@
 	slf4j.api,\
 	slf4j.simple,\
 	pnnl.goss.core.goss-core-security,\
-	pnnl.goss.core.goss-core-server
+	pnnl.goss.core.goss-core-server,\
+	org.apache.shiro.core;version=1.2,\
+	pnnl.goss.core.security-propertyfile
 -sub:  \
 	*.bnd
 -runfw: org.apache.felix.framework;version='[4,5]'

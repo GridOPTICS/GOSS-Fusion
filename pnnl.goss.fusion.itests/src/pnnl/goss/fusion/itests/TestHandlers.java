@@ -88,7 +88,7 @@ public class TestHandlers {
 		assertNotNull(clientFactory);
 		// After setting credentials the client should be able to send requests.
 		client = clientFactory.create(PROTOCOL.OPENWIRE);
-		client.setCredentials(new UsernamePasswordCredentials("reader", "reader"));
+		client.setCredentials(new UsernamePasswordCredentials("user1", "123"));
 //		DataSourcePooledJdbc ds = (DataSourcePooledJdbc) dsRegistry.get("pnnl.goss.fusiondb.server.datasources.FusionDataSource");
 //
 //		try(Connection conn = ds.getConnection()){
@@ -114,20 +114,20 @@ public class TestHandlers {
 ////		assertEquals(DataSourceType.DS_TYPE_JDBC, dsObject.getDataSourceType());
 //	}
 	
-	@Test
-	public void testGetCapacity(){
-		RequestCapacityRequirement req = new RequestCapacityRequirement("2013-01-21 00:06:00");
-		Response resp = client.getResponse(req);
-		assertNotNull(resp);
-		assertTrue("DataRespons it wasn't", resp instanceof DataResponse);
-		if ((((DataResponse)resp).getData() instanceof DataError)){
-			DataError err = (DataError)((DataResponse)resp).getData();
-			System.out.println("Error Message thrown: "+ err.getMessage());
-			fail("A DataError was thrown on server");
-		}
-		
-		
-	}
+//	@Test
+//	public void testGetCapacity(){
+//		RequestCapacityRequirement req = new RequestCapacityRequirement("2013-01-21 00:06:00");
+//		Response resp = client.getResponse(req);
+//		assertNotNull(resp);
+//		assertTrue("DataRespons it wasn't", resp instanceof DataResponse);
+//		if ((((DataResponse)resp).getData() instanceof DataError)){
+//			DataError err = (DataError)((DataResponse)resp).getData();
+//			System.out.println("Error Message thrown: "+ err.getMessage());
+//			fail("A DataError was thrown on server");
+//		}
+//		
+//		
+//	}
 	
 	
 
