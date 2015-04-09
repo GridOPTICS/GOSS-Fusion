@@ -8,3 +8,9 @@
 /bin_test/
 /RemoteSystemsTempFiles/
 /generated/
+/build
+fusiondb-common/build/
+fusiondb-common/target/
+fusiondb-server/target/
+fusiondb-server/build/
+cnf/cache/
