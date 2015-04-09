@@ -66,6 +66,7 @@ import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.datamodel.RTEDSchedule;
+import pnnl.goss.fusiondb.datamodel.RTEDScheduleData;
 import pnnl.goss.fusiondb.requests.RequestRTEDSchedule;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
@@ -74,7 +75,8 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(RequestRTEDScheduleHandler.class);
-
+	public boolean viz = false;
+	
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
 
@@ -92,8 +94,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 		Serializable data = null;
 
 		String dbQuery = "";
-		DataSourcePooledJdbc ds = (DataSourcePooledJdbc) dsRegistry
-				.get(FusionDataSource.class.getName());
+		DataSourcePooledJdbc ds = (DataSourcePooledJdbc) dsRegistry.get(FusionDataSource.class.getName());
 		try (Connection connection = ds.getConnection()) {
 			try (Statement stmt = connection.createStatement()) {
 				ResultSet rs = null;
@@ -105,47 +106,66 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 							+ request1.getStartTimestamp()
 							+ "' order by IntervalID";
 				} else {
+					if(request1.interval!=0)
 
-					dbQuery = "select * from fusion.rte_d_total where `TimeStamp` between '"
-							+ request1.getStartTimestamp()
-							+ "' and '"
-							+ request1.getEndTimeStamp()
-							+ "' and "
-							+ "IntervalID <= "
-							+ request1.getInterval()
-							+ " order by IntervalID";
+						dbQuery = "select * from fusion.rte_d_total "
+								+ "where `TimeStamp` between '"
+								+request1.getStartTimestamp()+"' and '"
+								+request1.getEndTimeStamp()+"' and "
+								+"IntervalID <= "+request1.getInterval()
+								+" order by IntervalID";
+						else
+							dbQuery = "select * from fusion.rte_d_total "
+									+ "where `TimeStamp` between '"
+									+request1.getStartTimestamp()+"' and '"
+									+request1.getEndTimeStamp()+"' "
+									+" order by IntervalID";
 				}
 
 				log.debug(dbQuery);
 				rs = stmt.executeQuery(dbQuery);
 
-				List<String> timestampsList = new ArrayList<String>();
-				List<Integer> intervalList = new ArrayList<Integer>();
-				List<Double> genList = new ArrayList<Double>();
-				List<Double> minList = new ArrayList<Double>();
-				List<Double> maxList = new ArrayList<Double>();
+				if(viz==false){
+					List<String> timestampsList = new ArrayList<String>();
+					List<Integer> intervalList = new ArrayList<Integer>();
+					List<Double> genList = new ArrayList<Double>();
+					List<Double> minList = new ArrayList<Double>();
+					List<Double> maxList = new ArrayList<Double>();
+					
+					while (rs.next()) {
+						timestampsList.add(rs.getString("TimeStamp"));
+						intervalList.add(rs.getInt("IntervalID"));
+						genList.add(rs.getDouble("Gen"));
+						minList.add(rs.getDouble("Min"));
+						maxList.add(rs.getDouble("Max"));
+					}
 
-				while (rs.next()) {
-					timestampsList.add(rs.getString(1));
-					intervalList.add(rs.getInt(2));
-					genList.add(rs.getDouble(3));
-					minList.add(rs.getDouble(4));
-					maxList.add(rs.getDouble(5));
-				}
-
-				RTEDSchedule rtedSchedule = new RTEDSchedule();
-				rtedSchedule.setTimestamps(timestampsList
-						.toArray(new String[timestampsList.size()]));
-				rtedSchedule.setIntervals(intervalList
-						.toArray(new Integer[intervalList.size()]));
-				rtedSchedule.setGenValues(genList.toArray(new Double[genList
-						.size()]));
-				rtedSchedule.setMinValues(minList.toArray(new Double[minList
-						.size()]));
-				rtedSchedule.setMaxValues(maxList.toArray(new Double[maxList
-						.size()]));
-
-				data = rtedSchedule;
+					RTEDSchedule rtedSchedule = new RTEDSchedule();
+					rtedSchedule.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
+					rtedSchedule.setIntervals(intervalList.toArray(new Integer[intervalList.size()]));
+					rtedSchedule.setGenValues(genList.toArray(new Double[genList.size()]));
+					rtedSchedule.setMinValues(minList.toArray(new Double[minList.size()]));
+					rtedSchedule.setMaxValues(maxList.toArray(new Double[maxList.size()]));
+					data = rtedSchedule;
+					
+					}
+					else{
+						
+						ArrayList<RTEDScheduleData> list = new ArrayList<RTEDScheduleData>();
+						RTEDScheduleData rtedScheduleData=null;
+						while (rs.next()) {
+							rtedScheduleData = new RTEDScheduleData();
+							rtedScheduleData.setGenValue(rs.getDouble("Gen"));
+							rtedScheduleData.setInterval(rs.getInt("IntervalID"));
+							rtedScheduleData.setMaxValue(rs.getDouble("Max"));
+							rtedScheduleData.setMinValue(rs.getDouble("Min"));
+							rtedScheduleData.setTimestamp(rs.getString("TimeStamp"));
+							list.add(rtedScheduleData);
+						}
+						data = list;
+						
+					}
+				connection.close();
 			}
 
 		} catch (Exception e) {

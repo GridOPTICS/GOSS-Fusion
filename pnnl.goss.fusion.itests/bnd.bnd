@@ -30,7 +30,7 @@
 Test-Cases: ${classes;ANNOTATION;org.junit.Test}
 
 -include: ${workspace}/pnnl.goss.fusion.itests/fusion-itests.bndrun
-Bundle-Version: 0.0.0.${tstamp}
+Bundle-Version: 0.0.1.${tstamp}
 
 
 

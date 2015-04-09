@@ -83,6 +83,7 @@ public class RequestVoltageStabilityViolationHandler implements RequestHandler {
 				}
 
 				response.setData(list);
+				connection.close();
 			}
 
 		} catch (Exception e) {

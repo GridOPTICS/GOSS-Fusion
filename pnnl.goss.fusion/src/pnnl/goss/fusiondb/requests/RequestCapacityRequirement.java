@@ -49,24 +49,42 @@ import pnnl.goss.core.Request;
 public class RequestCapacityRequirement extends Request {
 
 	private static final long serialVersionUID = -4814639638753423247L;
+	public enum Parameter {INTERVAL,CONFIDENCE};
 	String timestamp;
-	int intervalId=0;
+	String endTimestamp;
+	Parameter parameter=null;
+	int value=0;
 	
 	public RequestCapacityRequirement(String timestamp){
 		this.timestamp = timestamp;
 	}
 	
-	public RequestCapacityRequirement(String timestamp, int intervalId){
+	public RequestCapacityRequirement(String timestamp, String endTimestamp){
 		this.timestamp = timestamp;
-		this.intervalId = intervalId;
+		this.endTimestamp = endTimestamp;
 	}
-
+	
+	public RequestCapacityRequirement(String timestamp, Parameter parameter, int value){
+		this.timestamp = timestamp;
+		this.parameter = parameter;
+		this.value = value;
+	}
+	
 	public String getTimestamp() {
 		return timestamp;
 	}
+	
+	public String getEndTimestamp() {
+		return endTimestamp;
+	}
 
-	public int getIntervalId() {
-		return intervalId;
+	public int getValue() {
+		return value;
+	}
+	
+	public Parameter getParameter(){
+		return parameter;
 	}
 
 }
+

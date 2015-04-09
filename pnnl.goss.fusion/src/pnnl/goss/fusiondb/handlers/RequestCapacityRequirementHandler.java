@@ -66,18 +66,22 @@ import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
+import pnnl.goss.fusiondb.datamodel.CapacityRequirement;
 import pnnl.goss.fusiondb.datamodel.CapacityRequirementValues;
 import pnnl.goss.fusiondb.requests.RequestCapacityRequirement;
+import pnnl.goss.fusiondb.requests.RequestCapacityRequirement.Parameter;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
 @Component
 public class RequestCapacityRequirementHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(RequestCapacityRequirementHandler.class);
+	
+	public boolean viz=false;
 
 	@ServiceDependency
-	private volatile DataSourceRegistry dsRegistry;
-
+	private volatile DataSourceRegistry dataSourceRegistry;
+	
 	@Override
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
@@ -89,7 +93,7 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 	public DataResponse handle(Request request) {
 
 		DataResponse response = new DataResponse();
-		DataSourcePooledJdbc ds = (DataSourcePooledJdbc)dsRegistry.get(FusionDataSource.class.getName());
+		DataSourcePooledJdbc ds = (DataSourcePooledJdbc)dataSourceRegistry.get(FusionDataSource.class.getName());
 
 
 		try(Connection connection = ds.getConnection()){
@@ -98,36 +102,71 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 			Statement stmt = connection.createStatement();
 			ResultSet rs = null;
 
-			String query = "select * from capacity_requirements where `timestamp` = '"+request1.getTimestamp()+"'";
-			if(request1.getIntervalId()!=0)
-					query += " and interval_id = "+request1.getIntervalId();
-
+			String query = "select * from capacity_requirements ";
+			
+			//if no end timestamp is given 
+			if(request1.getEndTimestamp()==null)		
+				query+="where `timestamp` = '"+request1.getTimestamp()+"'";
+			else
+				query+="where `timeStamp` between '"+request1.getTimestamp() + "' and '"+request1.getEndTimestamp()+"'";
+			
+			//If no Parameter is given
+			if(request1.getParameter()==null)
+				query += " order by interval_id";
+			
+			
+			//If interval is given:
+			if(request1.getParameter()==Parameter.INTERVAL && request1.getValue()!=0)
+					query += " and interval_id = "+request1.getValue();
+			
+			
+			//If confidence is given:
+			if(request1.getParameter()==Parameter.CONFIDENCE && request1.getValue()!=0)
+				query += " and confidence = "+request1.getValue()+" order by interval_id";
+		
+			
 			System.out.println(query);
 			rs = stmt.executeQuery(query);
 
-			List<String> timestampsList = new ArrayList<String>();
-			List<Integer> confidenceList = new ArrayList<Integer>();
-			List<Integer> intervalIdList = new ArrayList<Integer>();
-			List<Integer> upList = new ArrayList<Integer>();
-			List<Integer> downList = new ArrayList<Integer>();
-
-			while (rs.next()) {
-				timestampsList.add(rs.getString(1));
-				confidenceList.add(rs.getInt(2));
-				intervalIdList.add(rs.getInt(3));
-				upList.add(rs.getInt(4));
-				downList.add(rs.getInt(5));
-
+			if(viz==false){
+				List<String> timestampsList = new ArrayList<String>();
+				List<Integer> confidenceList = new ArrayList<Integer>();
+				List<Integer> intervalIdList = new ArrayList<Integer>();
+				List<Integer> upList = new ArrayList<Integer>();
+				List<Integer> downList = new ArrayList<Integer>();
+				
+				while (rs.next()) {
+					timestampsList.add(rs.getString(1));
+					confidenceList.add(rs.getInt(2));
+					intervalIdList.add(rs.getInt(3));
+					upList.add(rs.getInt(4));
+					downList.add(rs.getInt(5));
+					
+				}
+	
+				CapacityRequirementValues data = new CapacityRequirementValues();
+				data.setTimestamp(timestampsList.toArray(new String[timestampsList.size()]));
+				data.setConfidence(confidenceList.toArray(new Integer[confidenceList.size()]));
+				data.setIntervalId(intervalIdList.toArray(new Integer[intervalIdList.size()]));
+				data.setUp(upList.toArray(new Integer[upList.size()]));
+				data.setDown(downList.toArray(new Integer[downList.size()]));
+				response.setData(data);
 			}
-
-			CapacityRequirementValues data = new CapacityRequirementValues();
-			data.setTimestamp(timestampsList.toArray(new String[timestampsList.size()]));
-			data.setConfidence(confidenceList.toArray(new Integer[confidenceList.size()]));
-			data.setIntervalId(intervalIdList.toArray(new Integer[intervalIdList.size()]));
-			data.setUp(upList.toArray(new Integer[upList.size()]));
-			data.setDown(downList.toArray(new Integer[downList.size()]));
-
-			response.setData(data);
+			else{
+				
+				ArrayList<CapacityRequirement> list = new ArrayList<CapacityRequirement>();
+				CapacityRequirement capacityRequirement=null;
+				while (rs.next()) {
+					int confidence = rs.getInt(2);
+					int down = rs.getInt(5);
+					int interval = rs.getInt(3);
+					String timestamp = rs.getString(1);
+					int up = rs.getInt(4);
+					capacityRequirement = new CapacityRequirement(timestamp,confidence,interval, up, down);
+					list.add(capacityRequirement);
+				}
+				response.setData(list);
+			}
 
 		}
 		catch(SQLException e){

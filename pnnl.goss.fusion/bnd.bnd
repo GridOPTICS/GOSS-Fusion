@@ -6,12 +6,15 @@
 	osgi.cmpn,\
 	org.h2,\
 	osgi.enterprise,\
-	pnnl.goss.core.core-api,\
 	pnnl.goss.core.goss-core-server-api,\
 	slf4j.api,\
 	slf4j.simple,\
 	pnnl.goss.core.goss-core-security,\
-	pnnl.goss.core.goss-core-server
+	pnnl.goss.core.goss-core-server,\
+	pnnl.goss.core.core-api,\
+	pnnl.goss.core.goss-client,\
+	org.apache.httpcomponents.httpclient,\
+	com.google.gson
 -sub:  \
 	*.bnd
 -runfw: org.apache.felix.framework;version='[4,5]'
