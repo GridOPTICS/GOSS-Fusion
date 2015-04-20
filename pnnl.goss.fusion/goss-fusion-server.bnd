@@ -1,5 +1,6 @@
 Private-Package:  \
+	pnnl.goss.fusiondb.server.datasources,\
 	pnnl.goss.fusiondb.handlers,\
-	pnnl.goss.fusiondb.server.datasources
+	pnnl.goss.fusiondb.auth
 	
 Bundle-Version: 0.0.1.${tstamp}
