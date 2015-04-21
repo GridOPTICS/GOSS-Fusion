@@ -29,7 +29,8 @@
 	osgi.identity;filter:='(osgi.identity=org.apache.servicemix.bundles.commons-dbcp)',\
 	osgi.identity;filter:='(osgi.identity=com.mysql.jdbc)',\
 	osgi.identity;filter:='(osgi.identity=org.eclipse.jetty.aggregate.jetty-all-server)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.fusion.goss-fusion-server)'
+	osgi.identity;filter:='(osgi.identity=pnnl.goss.fusion.goss-fusion-server)',\
+	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.security-propertyfile)'
 -runbundles:  \
 	com.mysql.jdbc;version='[5.1.34,5.1.35)',\
 	com.springsource.com.thoughtworks.xstream;version='[1.3.1,1.3.2)',\
@@ -85,7 +86,8 @@
 	pnnl.goss.core.goss-core-server-api;version=latest,\
 	pnnl.goss.fusion.goss-fusion-api;version=latest,\
 	pnnl.goss.fusion.goss-fusion-server;version=latest,\
-	pnnl.goss.fusion.itests;version=latest
+	pnnl.goss.fusion.itests;version=latest,\
+	pnnl.goss.core.security-propertyfile
 	
 -runproperties:  \
 	openwire.port=61616,\
