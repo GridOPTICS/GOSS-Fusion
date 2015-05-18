@@ -61,6 +61,11 @@ public class RequestInterfacesViolationHandler implements RequestHandler {
 							+ request1.getTimestamp()
 							+ "' and interval_id = "
 							+ request1.getIntervalId();
+				else if (request1.getIntervalId() != 0)
+					query = "select * from interfaces_violation where `timestamp` = '"
+							+ request1.getTimestamp()
+							+ "' and interval_id = "
+							+ request1.getIntervalId();
 				else
 					query = "select * from interfaces_violation where `timestamp` = '"
 							+ request1.getTimestamp()
