@@ -21,7 +21,6 @@ import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.auth.FusionAuthHandler;
 import pnnl.goss.fusiondb.datamodel.InterfacesViolation;
-import pnnl.goss.fusiondb.requests.RequestActualTotal;
 import pnnl.goss.fusiondb.requests.RequestInterfacesViolation;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
@@ -38,7 +37,7 @@ public class RequestInterfacesViolationHandler implements RequestHandler {
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 
-		auths.put(RequestActualTotal.class, FusionAuthHandler.class);
+		auths.put(RequestInterfacesViolation.class, FusionAuthHandler.class);
 
 		return auths;
 	}
@@ -56,11 +55,11 @@ public class RequestInterfacesViolationHandler implements RequestHandler {
 				ResultSet rs = null;
 				String query = null;
 
-				if (request1.getIntervalId() != 0)
-					query = "select * from interfaces_violation where `timestamp` = '"
-							+ request1.getTimestamp()
-							+ "' and interval_id = "
-							+ request1.getIntervalId();
+				if (request1.getIntervalId() != 0 && request1.getInterfaceId()!=0)
+					query = "select * from interfaces_violation where "
+							+ "`timestamp` = '"+ request1.getTimestamp()+"'"
+							+ " and interval_id = "+request1.getIntervalId()
+							+ " and interface_id = "+request1.getInterfaceId();
 				else if (request1.getIntervalId() != 0)
 					query = "select * from interfaces_violation where `timestamp` = '"
 							+ request1.getTimestamp()
@@ -81,8 +80,10 @@ public class RequestInterfacesViolationHandler implements RequestHandler {
 					int intervalId = rs.getInt("interval_id");
 					int interface_id = rs.getInt("interface_id");
 					double probability = rs.getDouble("probability");
+					int size = rs.getInt("size");
+					int limit = rs.getInt("limit");
 					interfacesViolation = new InterfacesViolation(timestamp,
-							intervalId, interface_id, probability);
+							intervalId, interface_id, probability, size, limit);
 					list.add(interfacesViolation);
 				}
 

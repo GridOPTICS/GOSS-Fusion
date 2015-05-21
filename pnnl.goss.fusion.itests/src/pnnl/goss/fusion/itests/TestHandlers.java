@@ -4,42 +4,27 @@ import static org.amdatu.testing.configurator.TestConfigurator.cleanUp;
 import static org.amdatu.testing.configurator.TestConfigurator.configuration;
 import static org.amdatu.testing.configurator.TestConfigurator.configure;
 import static org.amdatu.testing.configurator.TestConfigurator.serviceDependency;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 import org.amdatu.testing.configurator.TestConfiguration;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.shiro.mgt.SecurityManager;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
-import org.osgi.service.jdbc.DataSourceFactory;
 
 import pnnl.goss.core.Client;
-import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.DataError;
-import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.Response;
 import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.security.GossRealm;
+import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.server.DataSourceBuilder;
-import pnnl.goss.core.server.DataSourceObject;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
-import pnnl.goss.core.server.DataSourceType;
-import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.core.server.RequestHandlerRegistry;
-import pnnl.goss.core.server.ServerControl;
-import pnnl.goss.fusiondb.requests.RequestCapacityRequirement;
 
 public class TestHandlers {
 
@@ -87,8 +72,13 @@ public class TestHandlers {
 		
 		assertNotNull(clientFactory);
 		// After setting credentials the client should be able to send requests.
-		client = clientFactory.create(PROTOCOL.OPENWIRE);
-		client.setCredentials(new UsernamePasswordCredentials("user1", "123"));
+		
+		try {
+			Credentials credentials = new UsernamePasswordCredentials("user1", "123");
+			client = clientFactory.create(PROTOCOL.OPENWIRE, credentials);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 //		DataSourcePooledJdbc ds = (DataSourcePooledJdbc) dsRegistry.get("pnnl.goss.fusiondb.server.datasources.FusionDataSource");
 //
 //		try(Connection conn = ds.getConnection()){

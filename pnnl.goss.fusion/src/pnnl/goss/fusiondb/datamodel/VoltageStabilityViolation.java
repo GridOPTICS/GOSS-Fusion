@@ -10,12 +10,16 @@ public class VoltageStabilityViolation implements Serializable {
 	int intervalId;
 	int busId;
 	double probability;
+	int size;
+	int limit;
 	
-	public VoltageStabilityViolation(String timestamp, int intervalId, int busId, double probability) {
+	public VoltageStabilityViolation(String timestamp, int intervalId, int busId, double probability, int size, int limit) {
 		this.timestamp = timestamp;
 		this.intervalId = intervalId;
 		this.busId = busId;
 		this.probability = probability;
+		this.size = size;
+		this.limit = limit;
 	}
 	
 	public String getTimestamp() {
@@ -42,5 +46,16 @@ public class VoltageStabilityViolation implements Serializable {
 	public void setProbability(double probability) {
 		this.probability = probability;
 	}
-
+	public int getSize() {
+		return size;
+	}
+	public void setSize(int size) {
+		this.size = size;
+	}
+	public int getLimit() {
+		return limit;
+	}
+	public void setLimit(int limit) {
+		this.limit = limit;
+	}
 }

@@ -10,12 +10,16 @@ public class InterfacesViolation implements Serializable {
 	int intervalId;
 	int interfaceId;
 	double probability;
+	int size;
+	int limit;
 	
-	public InterfacesViolation(String timestamp, int intervalId, int interfaceId, double probability) {
+	public InterfacesViolation(String timestamp, int intervalId, int interfaceId, double probability, int size, int limit) {
 		this.timestamp = timestamp;
 		this.intervalId = intervalId;
 		this.interfaceId = interfaceId;
 		this.probability = probability;
+		this.size = size;
+		this.limit = limit;
 	}
 
 
@@ -43,5 +47,16 @@ public class InterfacesViolation implements Serializable {
 	public void setProbability(double probability) {
 		this.probability = probability;
 	}
-
+	public int getSize() {
+		return size;
+	}
+	public void setSize(int size) {
+		this.size = size;
+	}
+	public int getLimit() {
+		return limit;
+	}
+	public void setLimit(int limit) {
+		this.limit = limit;
+	}
 }

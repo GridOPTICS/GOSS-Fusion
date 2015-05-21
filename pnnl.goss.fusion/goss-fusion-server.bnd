@@ -3,4 +3,4 @@ Private-Package:  \
 	pnnl.goss.fusiondb.handlers,\
 	pnnl.goss.fusiondb.auth
 	
-Bundle-Version: 0.0.1.${tstamp}
+Bundle-Version: 0.0.2.${tstamp}

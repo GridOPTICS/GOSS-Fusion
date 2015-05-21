@@ -89,7 +89,10 @@ public class FusionUploadHandler implements RequestUploadHandler {
 	public Map<String, Class<? extends AuthorizationHandler>> getHandlerDataTypes() {
 		Map<String, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 		
-		auths.put(CapacityRequirement.class.getName(), FusionUploadAuthHandler.class);
+		auths.put(CapacityRequirement.class.getSimpleName(), FusionUploadAuthHandler.class);
+		auths.put(GeneratorData.class.getSimpleName(), FusionUploadAuthHandler.class);
+		auths.put(InterfacesViolation.class.getSimpleName(), FusionUploadAuthHandler.class);
+		auths.put(VoltageStabilityViolation.class.getSimpleName(), FusionUploadAuthHandler.class);
 		
 		return auths;
 	}
@@ -100,13 +103,13 @@ public class FusionUploadHandler implements RequestUploadHandler {
 		UploadResponse response = null;
 		boolean success = false;
 
-		if (dataType.equals(CapacityRequirement.class.getName())) {
+		if (dataType.equals(CapacityRequirement.class.getSimpleName())) {
 			success = uploadCapacityRequirement((CapacityRequirement) data);
-		} else if (dataType.equals(GeneratorData.class.getName())) {
+		} else if (dataType.equals(GeneratorData.class.getSimpleName())) {
 			success = uploadGeneratorData((GeneratorData) data);
-		} else if (dataType.equals(InterfacesViolation.class.getName())) {
+		} else if (dataType.equals(InterfacesViolation.class.getSimpleName())) {
 			success = uploadInterfacesViolation((InterfacesViolation) data);
-		} else if (dataType.equals(VoltageStabilityViolation.class.getName())) {
+		} else if (dataType.equals(VoltageStabilityViolation.class.getSimpleName())) {
 			success = uploadVoltageStabilityViolation((VoltageStabilityViolation) data);
 		} else {
 			response = new UploadResponse(false);
@@ -200,11 +203,13 @@ public class FusionUploadHandler implements RequestUploadHandler {
 						+ "`timestamp`,"
 						+ "interval_id,"
 						+ "interface_id,"
-						+ "probability) values ('"
+						+ "probability, size, `limit`) values ('"
 						+ data.getTimestamp()+"',"
 						+ data.getIntervalId()+","
 						+ data.getInterfaceId()+","
-						+ data.getProbability()+")";
+						+ data.getProbability()+","
+						+ data.getSize()+","
+						+ data.getLimit()+")";
 
 		log.debug(queryString);
 		int rows = executeUploadDataSql(queryString);
@@ -217,11 +222,13 @@ public class FusionUploadHandler implements RequestUploadHandler {
 				+ "`timestamp`,"
 				+ "interval_id,"
 				+ "bus_id,"
-				+ "probability) values ('"
+				+ "probability, size, `limit`) values ('"
 				+ data.getTimestamp()+"',"
 				+ data.getIntervalId()+","
 				+ data.getBusId()+","
-				+ data.getProbability()+")";
+				+ data.getProbability()+","
+				+ data.getSize()+","
+				+ data.getLimit()+")";
 		
 		log.debug(queryString);
 		int rows = executeUploadDataSql(queryString);

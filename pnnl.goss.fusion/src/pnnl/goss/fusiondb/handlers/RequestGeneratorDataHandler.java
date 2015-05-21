@@ -20,7 +20,6 @@ import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.auth.FusionAuthHandler;
 import pnnl.goss.fusiondb.datamodel.GeneratorData;
-import pnnl.goss.fusiondb.requests.RequestActualTotal;
 import pnnl.goss.fusiondb.requests.RequestGeneratorData;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
@@ -37,7 +36,7 @@ public class RequestGeneratorDataHandler implements RequestHandler {
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 
-		auths.put(RequestActualTotal.class, FusionAuthHandler.class);
+		auths.put(RequestGeneratorData.class, FusionAuthHandler.class);
 
 		return auths;
 	}
