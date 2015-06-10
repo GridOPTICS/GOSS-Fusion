@@ -104,7 +104,7 @@
 -runproperties:  \
 	openwire.port=61616,\
 	broker-name=wunderbar,\
-	activemq.host=localhost,\
+	activemq.host=0.0.0.0,\
 	stomp.port=61613,\
 	ws.port=61614,\
 	data=wunderdata,\

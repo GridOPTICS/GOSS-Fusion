@@ -5,8 +5,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.felix.dm.annotation.api.Stop;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 import pnnl.goss.core.Client;
@@ -17,25 +20,34 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.server.RequestHandler;
+import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.fusiondb.datamodel.VizRequest;
 import pnnl.goss.fusiondb.handlers.RequestActualTotalHandler;
 import pnnl.goss.fusiondb.handlers.RequestCapacityRequirementHandler;
 import pnnl.goss.fusiondb.handlers.RequestForecastTotalHandler;
+import pnnl.goss.fusiondb.handlers.RequestInterfacesViolationHandler;
 import pnnl.goss.fusiondb.handlers.RequestRTEDScheduleHandler;
 import pnnl.goss.fusiondb.requests.RequestActualTotal;
 import pnnl.goss.fusiondb.requests.RequestActualTotal.Type;
 import pnnl.goss.fusiondb.requests.RequestCapacityRequirement;
 import pnnl.goss.fusiondb.requests.RequestForecastTotal;
+import pnnl.goss.fusiondb.requests.RequestInterfacesViolation;
 import pnnl.goss.fusiondb.requests.RequestRTEDSchedule;
 
 import com.google.gson.Gson;
 
-public class DataStreamLauncher implements Runnable {
+@Component
+public class DataStreamLauncher{
 	
 	private volatile boolean isRunning = false;
 	
 	Client client = null; 
+	
+	@ServiceDependency
 	private volatile ClientFactory clientFactory;
+	
+	@ServiceDependency
+	private volatile ServerControl serverControl;
 	
 	SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -63,7 +75,9 @@ public class DataStreamLauncher implements Runnable {
 	String currentForecastLoadTopic = currentTopic+"/forecast/load";
 	String currentForecastSolarTopic = currentTopic+"/forecast/solar";
 	String currentForecastWindTopic = currentTopic+"/forecast/wind";
-	DataStreamLauncher launcher ;
+	
+	String interfaceViolationTOpic = "goss/fusion/viz/interfaces_violation";
+	
 	/**
 	 * Receives request from Fusion project's web based visualization on controlTopic.
 	 * Published data stream for historic and current data.
@@ -85,41 +99,19 @@ public class DataStreamLauncher implements Runnable {
 	 * 
 	 */
 	
-	//private volatile GossRequestHandlerRegistrationService registrationService;
-	//private volatile GossDataServices dataServices;
-	
-	
-	
-	/*
-	public DataStreamLauncher(@Requires GossRequestHandlerRegistrationService registrationService, @Requires GossDataServices dataServices){
-		this.registrationService = registrationService;
-		this.dataServices = dataServices;
-		client = new GossClient(PROTOCOL.STOMP);
-		client.setConfiguration(this.registrationService.getCoreServerConfig());
-	}
-	
-	private DataStreamLauncher(){
-		
-	}
-	
-	@Validate
-	public void startLauncher(){
-		Thread thread = new Thread(new DataStreamLauncher(this.registrationService, this.dataServices));
-		thread.start();
-	}
-	
-	@Invalidate
-	public void stopLauncher(){
-		isRunning = false;
-		if (client != null){
-			client.close();
-		}
-	}*/
-	
 	@Start
 	public void start(){
-		client = clientFactory.create(PROTOCOL.STOMP); 
-    	client.setCredentials(new UsernamePasswordCredentials("system", "manager"));
+		try {
+			System.out.println("*************** in start");
+			Credentials credentials = new UsernamePasswordCredentials("system", "manager");
+			client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			run();
+			System.out.println("*************** after run");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+    	
     	
 	    
 	}
@@ -131,65 +123,110 @@ public class DataStreamLauncher implements Runnable {
 	}
 	
 	
-	@Override
 	public void run() {
-		GossResponseEvent event =  new GossResponseEvent() {
-			@Override
-			public void onMessage(Serializable response) {
-				try{
-					String message = (String)((DataResponse)response).getData();
-					if(message.contains("stop stream"))
-						isRunning= false;
-					else{
-						Gson gson = new Gson();
-						final VizRequest vizRequest = gson.fromJson(message, VizRequest.class);
-						if(vizRequest.getType().toLowerCase().equals("historic")){
-							String endTimestamp = vizRequest.getTimestamp();
-							Date date = dateFormat.parse(endTimestamp);
-							date = new Date(date.getTime()-(vizRequest.getRange()*60*60*1000));
-							String timestamp = dateFormat.format(date);
-							publishHistoricData(timestamp, endTimestamp);
-						}
-						if(vizRequest.getType().toLowerCase().equals("current")){
-							Thread thread = new Thread(new Runnable() {
-
-								@Override
-								public void run() {
-									try{
-										SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-										isRunning = true;
-										String timestamp = vizRequest.getTimestamp();
-										Date date = dateFormat.parse(timestamp);
-										date = new Date(date.getTime()+(vizRequest.getRange()*60*1000));
-										String endTimestamp = dateFormat.format(date);
-										publishHistoricData(timestamp, endTimestamp);
-										while(isRunning){
-											publishCurrentData(timestamp,endTimestamp);
-											timestamp = endTimestamp;
-											date = dateFormat.parse(timestamp);
-											date = new Date(date.getTime()+(vizRequest.getRange()*60*1000));
-											endTimestamp = dateFormat.format(date);
-										}
-									}catch(ParseException p){
-										client.publishString(controlTopic, "timestamp is not in correct format mm/dd/yyyy HH:mm:ss");
-										p.printStackTrace();
-									}
+		System.out.println("*************** in run");
+		Thread thread_test = new Thread(new Runnable() {
+			public void run() {
+				System.out.println("*************** in in run");
+				GossResponseEvent event =  new GossResponseEvent() {
+					@Override
+					public void onMessage(Serializable response) {
+						System.out.println("*************** in on message");
+						try{
+							String message = (String)((DataResponse)response).getData();
+							System.out.println("**************************"+message);
+							if(message.contains("stop stream"))
+								isRunning= false;
+							else{
+								Gson gson = new Gson();
+								final VizRequest vizRequest = gson.fromJson(message, VizRequest.class);
+								if(vizRequest.getType().toLowerCase().equals("historic")){
+									String endTimestamp = vizRequest.getTimestamp();
+									Date date = dateFormat.parse(endTimestamp);
+									date = new Date(date.getTime()-(vizRequest.getRange()*60*60*1000));
+									String timestamp = dateFormat.format(date);
+									publishHistoricData(timestamp, endTimestamp);
 								}
-							});
-							thread.start();
+								if(vizRequest.getType().toLowerCase().equals("current")){
+									Thread thread = new Thread(new Runnable() {
+
+										@Override
+										public void run() {
+											try{
+												SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+												isRunning = true;
+												String timestamp = vizRequest.getTimestamp();
+												Date date = dateFormat.parse(timestamp);
+												date = new Date(date.getTime()+(vizRequest.getRange()*60*1000));
+												String endTimestamp = dateFormat.format(date);
+												publishHistoricData(timestamp, endTimestamp);
+												while(isRunning){
+													publishCurrentData(timestamp,endTimestamp);
+													timestamp = endTimestamp;
+													date = dateFormat.parse(timestamp);
+													date = new Date(date.getTime()+(vizRequest.getRange()*60*1000));
+													endTimestamp = dateFormat.format(date);
+												}
+											}catch(ParseException p){
+												client.publishString(controlTopic, "timestamp is not in correct format mm/dd/yyyy HH:mm:ss");
+												p.printStackTrace();
+											}
+										}
+									});
+									thread.start();
+								}
+								if(vizRequest.getType().toLowerCase().equals("interfaces_violation")){
+									Thread thread = new Thread(new Runnable() {
+
+										@Override
+										public void run() {
+											try{
+												SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+												isRunning = true;
+												String timestamp = vizRequest.getTimestamp();
+												Date date = dateFormat.parse(timestamp);
+												date = new Date(date.getTime()+(vizRequest.getRange()*60*1000));
+												String endTimestamp = dateFormat.format(date);
+												RequestInterfacesViolation request = new RequestInterfacesViolation(endTimestamp);
+												if(vizRequest.getIntervalId() != null)
+													request.setIntervalId(vizRequest.getIntervalId());
+												if(vizRequest.getInterfaceId() != null)
+													request.setInterfaceId(vizRequest.getInterfaceId());
+												
+												RequestInterfacesViolationHandler handler = new RequestInterfacesViolationHandler();
+												DataResponse response = (DataResponse)handler.handle(request);
+												client.publish(interfaceViolationTOpic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+												Gson gson = new Gson();
+												System.out.println(gson.toJson(response.getData()));
+												
+											}catch(ParseException p){
+												client.publishString(controlTopic, "timestamp is not in correct format mm/dd/yyyy HH:mm:ss");
+												p.printStackTrace();
+											}
+										}
+									});
+									thread.start();
+								}
+							}
+						}catch(ParseException e){
+							client.publishString(controlTopic, "timestamp is not in correct format mm/dd/yyyy HH:mm:ss");
+							e.printStackTrace();
+						}catch(Exception e){
+							client.publishString(controlTopic, e.getMessage());
+							e.printStackTrace();
 						}
 					}
-				}catch(ParseException e){
-					client.publishString(controlTopic, "timestamp is not in correct format mm/dd/yyyy HH:mm:ss");
-					e.printStackTrace();
-				}catch(Exception e){
-					client.publishString(controlTopic, e.getMessage());
-					e.printStackTrace();
-				}
+				};
+				
+				System.out.println("*************** before run");
+				client.subscribeTo("/topic/goss/fusion/viz/control", event);
+				System.out.println("*************** after run");
 			}
-		};
-
-		client.subscribeTo("/topic/goss/fusion/viz/control", event);
+		});
+		thread_test.start();
+		
+		
+		
 	}
 
 	/**
