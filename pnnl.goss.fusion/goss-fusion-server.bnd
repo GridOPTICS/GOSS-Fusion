@@ -2,6 +2,7 @@ Private-Package:  \
 	pnnl.goss.fusiondb.server.datasources,\
 	pnnl.goss.fusiondb.handlers,\
 	pnnl.goss.fusiondb.auth,\
-	pnnl.goss.fusiondb.launchers
+	pnnl.goss.fusiondb.launchers,\
+	pnnl.goss.fusiondb.server
 	
 Bundle-Version: 0.0.2.${tstamp}
