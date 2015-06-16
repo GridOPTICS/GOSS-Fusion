@@ -1,0 +1,10 @@
+Bundle-Version: 1.0.0.${tstamp}
+-buildpath:  \
+	biz.aQute.bnd.annotation,\
+	pnnl.goss.core.goss-core-server;version=latest,\
+	pnnl.goss.core.goss-core-server-api;version=latest,\
+	pnnl.goss.core.goss-core-server-web;version=latest,\
+	org.apache.activemq.activemq-osgi;version=5.11,\
+	org.apache.activemq.shiro;version=5.11,\
+	org.fusesource.stompjms.stompjms-client,\
+	pnnl.goss.core.goss-client;version=latest
