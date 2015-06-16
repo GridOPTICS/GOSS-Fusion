@@ -59,10 +59,10 @@ import org.slf4j.LoggerFactory;
 import pnnl.goss.core.Response;
 import pnnl.goss.core.UploadResponse;
 import pnnl.goss.core.security.AuthorizationHandler;
-import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestUploadHandler;
+import pnnl.goss.fusiondb.auth.FusionUploadAuthHandler;
 import pnnl.goss.fusiondb.datamodel.CapacityRequirement;
 import pnnl.goss.fusiondb.datamodel.GeneratorData;
 import pnnl.goss.fusiondb.datamodel.InterfacesViolation;
@@ -89,7 +89,10 @@ public class FusionUploadHandler implements RequestUploadHandler {
 	public Map<String, Class<? extends AuthorizationHandler>> getHandlerDataTypes() {
 		Map<String, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 		
-		auths.put(CapacityRequirement.class.getName(), AuthorizeAll.class);
+		auths.put(CapacityRequirement.class.getSimpleName(), FusionUploadAuthHandler.class);
+		auths.put(GeneratorData.class.getSimpleName(), FusionUploadAuthHandler.class);
+		auths.put(InterfacesViolation.class.getSimpleName(), FusionUploadAuthHandler.class);
+		auths.put(VoltageStabilityViolation.class.getSimpleName(), FusionUploadAuthHandler.class);
 		
 		return auths;
 	}
@@ -100,19 +103,17 @@ public class FusionUploadHandler implements RequestUploadHandler {
 		UploadResponse response = null;
 		boolean success = false;
 
-		if (dataType.equals(CapacityRequirement.class.getName())) {
+		if (dataType.equals(CapacityRequirement.class.getSimpleName())) {
 			success = uploadCapacityRequirement((CapacityRequirement) data);
-		} else if (dataType.equals(GeneratorData.class.getName())) {
+		} else if (dataType.equals(GeneratorData.class.getSimpleName())) {
 			success = uploadGeneratorData((GeneratorData) data);
-		} else if (dataType.equals(InterfacesViolation.class.getName())) {
+		} else if (dataType.equals(InterfacesViolation.class.getSimpleName())) {
 			success = uploadInterfacesViolation((InterfacesViolation) data);
-		} else if (dataType.equals(VoltageStabilityViolation.class
-				.getName())) {
+		} else if (dataType.equals(VoltageStabilityViolation.class.getSimpleName())) {
 			success = uploadVoltageStabilityViolation((VoltageStabilityViolation) data);
 		} else {
 			response = new UploadResponse(false);
-			response.setMessage("Unknown datatype: " + dataType
-					+ " specified.");
+			response.setMessage("Unknown datatype: " + dataType	+ " specified.");
 		}
 			
 		if (success){
@@ -142,6 +143,8 @@ public class FusionUploadHandler implements RequestUploadHandler {
 		try (Connection connection = ds.getConnection()){			
 			try (Statement stmt = connection.createStatement()){
 				rows =  stmt.executeUpdate(queryString);
+				if(connection.getAutoCommit()==false)
+					connection.commit();
 			}
 			
 			log.debug("ROWS: " + rows);
@@ -157,6 +160,7 @@ public class FusionUploadHandler implements RequestUploadHandler {
 		String queryString = "replace into capacity_requirements(`timestamp`,confidence,interval_id,up,down) values "+
 								"('"+data.getTimestamp()+"',"+data.getConfidence()+","+data.getIntervalId()+","+data.getUp()+","+data.getDown()+")";
 		
+		log.debug(queryString);
 		int rows = executeUploadDataSql(queryString);
 		
 		return (rows != -1);
@@ -186,6 +190,7 @@ public class FusionUploadHandler implements RequestUploadHandler {
 							+data.getGenMWMax()+","
 							+data.getGenMWMin()+")";
 		
+		log.debug(queryString);
 		int rows = executeUploadDataSql(queryString);
 		
 		return (rows != -1);		
@@ -198,12 +203,15 @@ public class FusionUploadHandler implements RequestUploadHandler {
 						+ "`timestamp`,"
 						+ "interval_id,"
 						+ "interface_id,"
-						+ "probability) values ('"
+						+ "probability, size, `limit`) values ('"
 						+ data.getTimestamp()+"',"
 						+ data.getIntervalId()+","
 						+ data.getInterfaceId()+","
-						+ data.getProbability()+")";
+						+ data.getProbability()+","
+						+ data.getSize()+","
+						+ data.getLimit()+")";
 
+		log.debug(queryString);
 		int rows = executeUploadDataSql(queryString);
 		
 		return (rows != -1);				
@@ -214,12 +222,15 @@ public class FusionUploadHandler implements RequestUploadHandler {
 				+ "`timestamp`,"
 				+ "interval_id,"
 				+ "bus_id,"
-				+ "probability) values ('"
+				+ "probability, size, `limit`) values ('"
 				+ data.getTimestamp()+"',"
 				+ data.getIntervalId()+","
 				+ data.getBusId()+","
-				+ data.getProbability()+")";
+				+ data.getProbability()+","
+				+ data.getSize()+","
+				+ data.getLimit()+")";
 		
+		log.debug(queryString);
 		int rows = executeUploadDataSql(queryString);
 		
 		return (rows != -1);		

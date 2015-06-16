@@ -8,10 +8,17 @@ public class RequestInterfacesViolation extends Request {
 	
 	String timestamp;
 	int intervalId;
+	int interfaceId;
 	
 	public RequestInterfacesViolation(String timestamp, int intervalId){
 		this.timestamp = timestamp;
 		this.intervalId = intervalId;
+	}
+	
+	public RequestInterfacesViolation(String timestamp, int intervalId, int interfaceId){
+		this.timestamp = timestamp;
+		this.intervalId = intervalId;
+		this.interfaceId = interfaceId;
 	}
 	
 	public RequestInterfacesViolation(String timestamp){
@@ -33,5 +40,15 @@ public class RequestInterfacesViolation extends Request {
 	public void setIntervalId(int intervalId) {
 		this.intervalId = intervalId;
 	}
+
+	public int getInterfaceId() {
+		return interfaceId;
+	}
+
+	public void setInterfaceId(int interfaceId) {
+		this.interfaceId = interfaceId;
+	}
+	
+	
 	
 }

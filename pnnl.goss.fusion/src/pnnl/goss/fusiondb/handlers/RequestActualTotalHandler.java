@@ -61,11 +61,12 @@ import org.slf4j.LoggerFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
-import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
+import pnnl.goss.fusiondb.auth.FusionAuthHandler;
 import pnnl.goss.fusiondb.datamodel.ActualTotal;
+import pnnl.goss.fusiondb.datamodel.ActualTotalData;
 import pnnl.goss.fusiondb.requests.RequestActualTotal;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
@@ -73,6 +74,7 @@ import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 public class RequestActualTotalHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(RequestActualTotalHandler.class);
+	public boolean viz = false;
 			
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
@@ -81,7 +83,7 @@ public class RequestActualTotalHandler implements RequestHandler {
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 		
-		auths.put(RequestActualTotal.class, AuthorizeAll.class);
+		auths.put(RequestActualTotal.class, FusionAuthHandler.class);
 		
 		return auths;
 	}
@@ -114,20 +116,34 @@ public class RequestActualTotalHandler implements RequestHandler {
 			System.out.println(dbQuery);
 			rs = stmt.executeQuery(dbQuery);
 			
-			List<Double> valuesList = new ArrayList<Double>();
-			List<String> timestampsList = new ArrayList<String>();
-			
-			while (rs.next()) {
-				timestampsList.add(rs.getString(1));
-				valuesList.add(rs.getDouble(2));
+			if(viz==false){
+				List<Double> valuesList = new ArrayList<Double>();
+				List<String> timestampsList = new ArrayList<String>();
+				
+				while (rs.next()) {
+					timestampsList.add(rs.getString(1));
+					valuesList.add(rs.getDouble(2));
+				}
+	
+				ActualTotal actualTotal = new ActualTotal();
+				actualTotal.setType(request1.getType().toString());
+				actualTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
+				actualTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
+				
+				data = actualTotal;
 			}
-
-			ActualTotal actualTotal = new ActualTotal();
-			actualTotal.setType(request1.getType().toString());
-			actualTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
-			actualTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
-			
-			data = actualTotal;
+			else{
+				ArrayList<ActualTotalData> list = new ArrayList<ActualTotalData>();
+				ActualTotalData actualTotal=null;
+				while (rs.next()) {
+					actualTotal = new ActualTotalData();
+					actualTotal.setTimestamps(rs.getString(1));
+					actualTotal.setType(request1.getType().toString());
+					actualTotal.setValue(rs.getDouble(2));
+					list.add(actualTotal);
+				}
+				data = list;
+			}
 			
 			stmt.close();
 			connection.close();

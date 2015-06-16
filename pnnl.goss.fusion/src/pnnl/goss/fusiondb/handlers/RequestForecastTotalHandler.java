@@ -61,11 +61,12 @@ import org.slf4j.LoggerFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
-import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
+import pnnl.goss.fusiondb.auth.FusionAuthHandler;
 import pnnl.goss.fusiondb.datamodel.ForecastTotal;
+import pnnl.goss.fusiondb.datamodel.ForecastTotalData;
 import pnnl.goss.fusiondb.requests.RequestForecastTotal;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
@@ -73,6 +74,7 @@ import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 public class RequestForecastTotalHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(RequestForecastTotalHandler.class);
+	public boolean viz= false;
 			
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
@@ -81,7 +83,7 @@ public class RequestForecastTotalHandler implements RequestHandler {
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 
-		auths.put(RequestForecastTotal.class, AuthorizeAll.class);
+		auths.put(RequestForecastTotal.class, FusionAuthHandler.class);
 		
 		return auths;
 	}
@@ -111,24 +113,42 @@ public class RequestForecastTotalHandler implements RequestHandler {
 			System.out.println(dbQuery);
 			rs = stmt.executeQuery(dbQuery);
 			
-			List<Double> valuesList = new ArrayList<Double>();
-			List<String> timestampsList = new ArrayList<String>();
-			List<Integer> intervalsList = new ArrayList<Integer>();
-			
-			while (rs.next()) {
-				timestampsList.add(rs.getString(1));
-				intervalsList.add(rs.getInt(2));
-				valuesList.add(rs.getDouble(3));
+			if(viz==false){
+				List<Double> valuesList = new ArrayList<Double>();
+				List<String> timestampsList = new ArrayList<String>();
+				List<Integer> intervalsList = new ArrayList<Integer>();
 				
+				while (rs.next()) {
+					timestampsList.add(rs.getString(1));
+					intervalsList.add(rs.getInt(2));
+					valuesList.add(rs.getDouble(3));
+					
+				}
+	
+				ForecastTotal forecastTotal = new ForecastTotal();
+				forecastTotal.setType(request1.getType().toString());
+				forecastTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
+				forecastTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
+				forecastTotal.setIntervals(intervalsList.toArray(new Integer[intervalsList.size()]));
+				
+				data = forecastTotal;
 			}
-
-			ForecastTotal forecastTotal = new ForecastTotal();
-			forecastTotal.setType(request1.getType().toString());
-			forecastTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
-			forecastTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
-			forecastTotal.setIntervals(intervalsList.toArray(new Integer[intervalsList.size()]));
+			else{
+				ArrayList<ForecastTotalData> list = new ArrayList<ForecastTotalData>();
+				ForecastTotalData forecastTotal=null;
+				while (rs.next()) {
+					forecastTotal = new ForecastTotalData();
+					forecastTotal.setTimestamp(rs.getString(1));
+					forecastTotal.setType(request1.getType().toString());
+					forecastTotal.setValue(rs.getDouble(3));
+					forecastTotal.setInterval(rs.getInt(2));
+					list.add(forecastTotal);
+				}
+				data = list;
+			}
 			
-			data = forecastTotal;
+			
+			stmt.close();
 			connection.close();
 			
 		} catch (Exception e) {

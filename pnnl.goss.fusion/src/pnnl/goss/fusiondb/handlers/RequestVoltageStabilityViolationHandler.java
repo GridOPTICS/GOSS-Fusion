@@ -16,12 +16,11 @@ import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.security.AuthorizationHandler;
-import pnnl.goss.core.security.AuthorizeAll;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
+import pnnl.goss.fusiondb.auth.FusionAuthHandler;
 import pnnl.goss.fusiondb.datamodel.VoltageStabilityViolation;
-import pnnl.goss.fusiondb.requests.RequestActualTotal;
 import pnnl.goss.fusiondb.requests.RequestVoltageStabilityViolation;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
@@ -38,7 +37,7 @@ public class RequestVoltageStabilityViolationHandler implements RequestHandler {
 	public Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> getHandles() {
 		Map<Class<? extends Request>, Class<? extends AuthorizationHandler>> auths = new HashMap<>();
 
-		auths.put(RequestActualTotal.class, AuthorizeAll.class);
+		auths.put(RequestVoltageStabilityViolation.class, FusionAuthHandler.class);
 
 		return auths;
 	}
@@ -77,12 +76,15 @@ public class RequestVoltageStabilityViolationHandler implements RequestHandler {
 					int intervalId = rs.getInt("interval_id");
 					int busId = rs.getInt("bus_id");
 					double probability = rs.getDouble("probability");
+					int size = rs.getInt("size");
+					int limit = rs.getInt("limit");
 					voltageStabilityViolation = new VoltageStabilityViolation(
-							timestamp, intervalId, busId, probability);
+							timestamp, intervalId, busId, probability, size, limit);
 					list.add(voltageStabilityViolation);
 				}
 
 				response.setData(list);
+				connection.close();
 			}
 
 		} catch (Exception e) {

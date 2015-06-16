@@ -11,6 +11,8 @@ public class VizRequest implements Serializable{
 	Integer range;
 	String unit;
 	String endTimestamp;
+	Integer intervalId;
+	Integer interfaceId;
 	
 	public String getType() {
 		return type;
@@ -41,6 +43,18 @@ public class VizRequest implements Serializable{
 	}
 	public void setEndTimestamp(String endTimestamp) {
 		this.endTimestamp = endTimestamp;
+	}
+	public Integer getIntervalId() {
+		return intervalId;
+	}
+	public void setIntervalId(Integer intervalId) {
+		this.intervalId = intervalId;
+	}
+	public Integer getInterfaceId() {
+		return interfaceId;
+	}
+	public void setInterfaceId(Integer interfaceId) {
+		this.interfaceId = interfaceId;
 	}
 	
 	
