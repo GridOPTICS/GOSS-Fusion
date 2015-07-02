@@ -19,13 +19,12 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Request;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
-import pnnl.goss.core.server.RequestHandler;
+import pnnl.goss.core.server.HandlerNotFoundException;
+import pnnl.goss.core.server.RequestHandlerRegistry;
 import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.fusiondb.datamodel.VizRequest;
 import pnnl.goss.fusiondb.handlers.RequestActualTotalHandler;
-import pnnl.goss.fusiondb.handlers.RequestCapacityRequirementHandler;
 import pnnl.goss.fusiondb.handlers.RequestForecastTotalHandler;
-import pnnl.goss.fusiondb.handlers.RequestInterfacesViolationHandler;
 import pnnl.goss.fusiondb.handlers.RequestRTEDScheduleHandler;
 import pnnl.goss.fusiondb.requests.RequestActualTotal;
 import pnnl.goss.fusiondb.requests.RequestActualTotal.Type;
@@ -45,6 +44,9 @@ public class DataStreamLauncher{
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
+	
+	@ServiceDependency
+	private volatile RequestHandlerRegistry handler;
 	
 	@ServiceDependency
 	private volatile ServerControl serverControl;
@@ -102,39 +104,29 @@ public class DataStreamLauncher{
 	@Start
 	public void start(){
 		try {
-			System.out.println("*************** in start");
 			Credentials credentials = new UsernamePasswordCredentials("system", "manager");
 			client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			run();
-			System.out.println("*************** after run");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-    	
-    	
-	    
-	}
+    }
 	
 	@Stop
 	public void stop(){
-		
 		clientFactory.destroy();
 	}
 	
 	
 	public void run() {
-		System.out.println("*************** in run");
 		Thread thread_test = new Thread(new Runnable() {
 			public void run() {
-				System.out.println("*************** in in run");
 				GossResponseEvent event =  new GossResponseEvent() {
 					@Override
 					public void onMessage(Serializable response) {
-						System.out.println("*************** in on message");
 						try{
 							String message = (String)((DataResponse)response).getData();
-							System.out.println("**************************"+message);
 							if(message.contains("stop stream"))
 								isRunning= false;
 							else{
@@ -185,7 +177,7 @@ public class DataStreamLauncher{
 												isRunning = true;
 												String timestamp = vizRequest.getTimestamp();
 												Date date = dateFormat.parse(timestamp);
-												date = new Date(date.getTime()+(vizRequest.getRange()*60*1000));
+												date = new Date(date.getTime());
 												String endTimestamp = dateFormat.format(date);
 												RequestInterfacesViolation request = new RequestInterfacesViolation(endTimestamp);
 												if(vizRequest.getIntervalId() != null)
@@ -193,11 +185,17 @@ public class DataStreamLauncher{
 												if(vizRequest.getInterfaceId() != null)
 													request.setInterfaceId(vizRequest.getInterfaceId());
 												
-												RequestInterfacesViolationHandler handler = new RequestInterfacesViolationHandler();
-												DataResponse response = (DataResponse)handler.handle(request);
-												client.publish(interfaceViolationTOpic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
-												Gson gson = new Gson();
-												System.out.println(gson.toJson(response.getData()));
+												DataResponse response;
+												try {
+													response = (DataResponse)handler.handle(request);
+													client.publish(interfaceViolationTOpic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+													Gson gson = new Gson();
+													System.out.println(gson.toJson(response.getData()));
+												} catch (HandlerNotFoundException e) {
+													// TODO Auto-generated catch block
+													e.printStackTrace();
+												}
+												
 												
 											}catch(ParseException p){
 												client.publishString(controlTopic, "timestamp is not in correct format mm/dd/yyyy HH:mm:ss");
@@ -218,9 +216,7 @@ public class DataStreamLauncher{
 					}
 				};
 				
-				System.out.println("*************** before run");
 				client.subscribeTo("/topic/goss/fusion/viz/control", event);
-				System.out.println("*************** after run");
 			}
 		});
 		thread_test.start();
@@ -233,11 +229,12 @@ public class DataStreamLauncher{
 	 * queries and publishes historical data
 	 */
 	private void publishHistoricData(String timeStamp, String endTimestamp){
+		
+		try{
 
 		// capacity requirement
 		Request request = new RequestCapacityRequirement(timeStamp,endTimestamp);
-		RequestCapacityRequirementHandler handler = new RequestCapacityRequirementHandler();
-		handler.viz = true;
+		((RequestCapacityRequirement)request).setViz(true);
 		DataResponse response = (DataResponse)handler.handle(request);
 		client.publish(historicCapaReqTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		Gson gson = new Gson();
@@ -245,134 +242,128 @@ public class DataStreamLauncher{
 
 		// total rted
 		request = new RequestRTEDSchedule(timeStamp, endTimestamp);
-		RequestRTEDScheduleHandler rtedhandler = new RequestRTEDScheduleHandler();
-		rtedhandler.viz = true;
-		response = (DataResponse)rtedhandler.handle(request);
+		((RequestRTEDSchedule)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
 		client.publish(historicInterchangeScheduleTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		// total interchange
 		request =  new RequestActualTotal(Type.INTERHCHANGE, timeStamp, endTimestamp);
-		RequestActualTotalHandler actualtotalhandler = new RequestActualTotalHandler();
-		actualtotalhandler.viz = true;
-		response = (DataResponse)actualtotalhandler.handle(request);
+		((RequestActualTotal)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
 		client.publish(historicInterchangeTotalTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		// actual load
 		request =  new RequestActualTotal(Type.LOAD, timeStamp, endTimestamp);
-		actualtotalhandler = new RequestActualTotalHandler();
-		actualtotalhandler.viz = true;
-		response = (DataResponse)actualtotalhandler.handle(request);
+		((RequestActualTotal)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
 		client.publish(historicActualLoadTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		// actual wind
 		request =  new RequestActualTotal(Type.WIND, timeStamp, endTimestamp);
-		actualtotalhandler = new RequestActualTotalHandler();
-		actualtotalhandler.viz = true;
-		response = (DataResponse)actualtotalhandler.handle(request);
+		((RequestActualTotal)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
 		client.publish(historicActualWindTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		// actual solar
 		request =  new RequestActualTotal(Type.SOLAR, timeStamp, endTimestamp);
-		actualtotalhandler = new RequestActualTotalHandler();
-		actualtotalhandler.viz = true;
-		response = (DataResponse)actualtotalhandler.handle(request);
+		((RequestActualTotal)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
 		client.publish(historicActualSolarTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		//forecast load
 		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.LOAD, timeStamp, endTimestamp);
-		RequestForecastTotalHandler forecasthandler = new RequestForecastTotalHandler();
-		forecasthandler.viz = true;
-		response = (DataResponse)forecasthandler.handle(request);
+		((RequestForecastTotal)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
 		client.publish(historicForecastLoadTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		//forecast solar
 		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.SOLAR, timeStamp, endTimestamp);
-		forecasthandler = new RequestForecastTotalHandler();
-		forecasthandler.viz = true;
-		response = (DataResponse)forecasthandler.handle(request);
+		((RequestForecastTotal)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
 		client.publish(historicForecastSolarTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		//forecast wind
 		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.WIND, timeStamp, endTimestamp);
-		forecasthandler = new RequestForecastTotalHandler();
-		forecasthandler.viz = true;
-		response = (DataResponse)forecasthandler.handle(request);
+		((RequestForecastTotal)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
 		client.publish(historicForecastWindTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
+		
+		}catch(HandlerNotFoundException e){
+			e.printStackTrace();
+		}
+		
 	}
 
 	private void publishCurrentData(String timeStamp, String endTimestamp){
 		
+		try{
+			
 		// capacity requirement
 		Request request = new RequestCapacityRequirement(timeStamp,endTimestamp);
-		RequestHandler handler = new RequestCapacityRequirementHandler();
-		((RequestCapacityRequirementHandler)handler).viz = true;
+		((RequestCapacityRequirement)request).setViz(true);
 		DataResponse response = (DataResponse)handler.handle(request);
 		client.publish(currentCapaReqTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// total rted
 		request = new RequestRTEDSchedule(timeStamp, endTimestamp);
-		handler = new RequestRTEDScheduleHandler();
-		((RequestRTEDScheduleHandler)handler).viz = true;
+		((RequestRTEDSchedule)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
 		client.publish(currentInterchangeScheduleTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// total interchange
 		request =  new RequestActualTotal(Type.INTERHCHANGE, timeStamp, endTimestamp);
-		handler = new RequestActualTotalHandler();
-		((RequestActualTotalHandler)handler).viz = true;
+		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
 		client.publish(currentInterchangeTotalTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// actual load
 		request =  new RequestActualTotal(Type.LOAD, timeStamp, endTimestamp);
-		handler = new RequestActualTotalHandler();
-		((RequestActualTotalHandler)handler).viz = true;
+		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
 		client.publish(currentActualLoadTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// actual wind
 		request =  new RequestActualTotal(Type.WIND, timeStamp, endTimestamp);
-		handler = new RequestActualTotalHandler();
-		((RequestActualTotalHandler)handler).viz = true;
+		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
 		client.publish(currentActualWindTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// actual solar
 		request =  new RequestActualTotal(Type.SOLAR, timeStamp, endTimestamp);
-		handler = new RequestActualTotalHandler();
-		((RequestActualTotalHandler)handler).viz = true;
+		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
 		client.publish(currentActualSolarTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		//forecast load
 		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.LOAD, timeStamp, endTimestamp);
-		handler = new RequestForecastTotalHandler();
-		((RequestForecastTotalHandler)handler).viz = true;
+		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
 		client.publish(currentForecastLoadTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		//forecast solar
 		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.SOLAR, timeStamp, endTimestamp);
-		handler = new RequestForecastTotalHandler();
-		((RequestForecastTotalHandler)handler).viz = true;
+		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
 		client.publish(currentForecastSolarTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		//forecast wind
 		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.WIND, timeStamp, endTimestamp);
-		handler = new RequestForecastTotalHandler();
-		((RequestForecastTotalHandler)handler).viz = true;
+		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
 		client.publish(currentForecastWindTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
-
+		
+		}catch(HandlerNotFoundException e){
+			e.printStackTrace();
+		}
+		
 	}
 
 }

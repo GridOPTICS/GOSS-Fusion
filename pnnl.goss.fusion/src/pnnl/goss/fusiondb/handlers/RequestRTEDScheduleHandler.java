@@ -106,7 +106,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 							+ request1.getStartTimestamp()
 							+ "' order by IntervalID";
 				} else {
-					if(request1.interval!=0)
+					if(request1.getInterval()!=0)
 
 						dbQuery = "select * from fusion.rte_d_total "
 								+ "where `TimeStamp` between '"

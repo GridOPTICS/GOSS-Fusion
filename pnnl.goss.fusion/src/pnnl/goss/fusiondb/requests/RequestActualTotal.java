@@ -52,9 +52,10 @@ public class RequestActualTotal extends Request {
 
 	public enum Type{LOAD,SOLAR,WIND,INTERHCHANGE};
 	
-	public Type valueType;
-	public String startTimestamp;
-	public String endTimeStamp;
+	Type valueType;
+	String startTimestamp;
+	String endTimeStamp;
+	boolean viz = false;
 	
 	public RequestActualTotal(Type valueType, String startTimestamp){
 		this.valueType = valueType;
@@ -91,6 +92,13 @@ public class RequestActualTotal extends Request {
 		this.endTimeStamp = endTimeStamp;
 	}
 	
+	public boolean isViz() {
+		return viz;
+	}
+
+	public void setViz(boolean viz) {
+		this.viz = viz;
+	}
 	
 
 }

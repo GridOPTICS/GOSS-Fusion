@@ -50,9 +50,10 @@ public class RequestRTEDSchedule extends Request {
 	
 	private static final long serialVersionUID = 6683972527896293428L;
 	
-	public String startTimestamp;
-	public String endTimeStamp;
-	public int interval;
+	String startTimestamp;
+	String endTimeStamp;
+	int interval;
+	boolean viz= false;
 	
 	public RequestRTEDSchedule(String startTimestamp){
 		this.startTimestamp = startTimestamp;
@@ -90,6 +91,13 @@ public class RequestRTEDSchedule extends Request {
 		this.interval = interval;
 	}
 	
+	public boolean isViz() {
+		return viz;
+	}
+
+	public void setViz(boolean viz) {
+		this.viz = viz;
+	}
 	
 
 

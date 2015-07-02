@@ -134,7 +134,7 @@ public class FusionDataSource {
 		properties.setProperty(DataSourceBuilder.DATASOURCE_DRIVER, dbDriver);
 		// Add other specific properties that shoudl be on the object.
 		builder.create(this.getClass().getName(), properties);
-
+		
 		//System.out.println("factory is? "+factory);
 	}
 	

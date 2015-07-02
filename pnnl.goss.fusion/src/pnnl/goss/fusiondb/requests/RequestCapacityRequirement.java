@@ -54,6 +54,7 @@ public class RequestCapacityRequirement extends Request {
 	String endTimestamp;
 	Parameter parameter=null;
 	int value=0;
+	boolean viz=false;
 	
 	public RequestCapacityRequirement(String timestamp){
 		this.timestamp = timestamp;
@@ -86,5 +87,13 @@ public class RequestCapacityRequirement extends Request {
 		return parameter;
 	}
 
+	public boolean isViz() {
+		return viz;
+	}
+
+	public void setViz(boolean viz) {
+		this.viz = viz;
+	}
+	
 }
 

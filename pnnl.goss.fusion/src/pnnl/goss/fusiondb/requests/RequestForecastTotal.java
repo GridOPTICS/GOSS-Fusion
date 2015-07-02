@@ -52,10 +52,11 @@ public class RequestForecastTotal extends Request {
 	
 	public enum Type{LOAD,SOLAR,WIND};
 	
-	public Type type;
-	public String startTimestamp;
-	public String endTimeStamp;
-	public int interval;
+	Type type;
+	String startTimestamp;
+	String endTimeStamp;
+	int interval;
+	boolean viz=false;
 	
 	public RequestForecastTotal(Type type, String startTimestamp, int interval){
 		this.type = type;
@@ -99,6 +100,14 @@ public class RequestForecastTotal extends Request {
 	}
 	public void setInterval(int interval) {
 		this.interval = interval;
+	}
+	
+	public boolean isViz() {
+		return viz;
+	}
+
+	public void setViz(boolean viz) {
+		this.viz = viz;
 	}
 
 }
