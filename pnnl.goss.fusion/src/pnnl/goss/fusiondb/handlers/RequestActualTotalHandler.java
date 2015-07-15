@@ -74,7 +74,6 @@ import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 public class RequestActualTotalHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(RequestActualTotalHandler.class);
-	public boolean viz = false;
 			
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
@@ -116,7 +115,7 @@ public class RequestActualTotalHandler implements RequestHandler {
 			System.out.println(dbQuery);
 			rs = stmt.executeQuery(dbQuery);
 			
-			if(viz==false){
+			if(request1.isViz()==false){
 				List<Double> valuesList = new ArrayList<Double>();
 				List<String> timestampsList = new ArrayList<String>();
 				

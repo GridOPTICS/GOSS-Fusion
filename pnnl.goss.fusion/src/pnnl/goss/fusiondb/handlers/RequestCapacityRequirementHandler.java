@@ -77,8 +77,6 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(RequestCapacityRequirementHandler.class);
 	
-	public boolean viz=false;
-
 	@ServiceDependency
 	private volatile DataSourceRegistry dataSourceRegistry;
 	
@@ -128,7 +126,7 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 			System.out.println(query);
 			rs = stmt.executeQuery(query);
 
-			if(viz==false){
+			if(request1.isViz()==false){
 				List<String> timestampsList = new ArrayList<String>();
 				List<Integer> confidenceList = new ArrayList<Integer>();
 				List<Integer> intervalIdList = new ArrayList<Integer>();

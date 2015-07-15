@@ -74,7 +74,6 @@ import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 public class RequestForecastTotalHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(RequestForecastTotalHandler.class);
-	public boolean viz= false;
 			
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
@@ -113,7 +112,7 @@ public class RequestForecastTotalHandler implements RequestHandler {
 			System.out.println(dbQuery);
 			rs = stmt.executeQuery(dbQuery);
 			
-			if(viz==false){
+			if(request1.isViz()==false){
 				List<Double> valuesList = new ArrayList<Double>();
 				List<String> timestampsList = new ArrayList<String>();
 				List<Integer> intervalsList = new ArrayList<Integer>();

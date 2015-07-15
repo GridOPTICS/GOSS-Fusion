@@ -75,7 +75,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(RequestRTEDScheduleHandler.class);
-	public boolean viz = false;
+	
 	
 	@ServiceDependency
 	private volatile DataSourceRegistry dsRegistry;
@@ -125,7 +125,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 				log.debug(dbQuery);
 				rs = stmt.executeQuery(dbQuery);
 
-				if(viz==false){
+				if(request1.isViz()==false){
 					List<String> timestampsList = new ArrayList<String>();
 					List<Integer> intervalList = new ArrayList<Integer>();
 					List<Double> genList = new ArrayList<Double>();
