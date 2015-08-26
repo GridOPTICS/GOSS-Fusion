@@ -1,4 +1,4 @@
-package pnnl.goss.fusion.itests.commands;
+/*package pnnl.goss.fusion.itests.commands;
 
 import java.util.ArrayList;
 
@@ -49,6 +49,7 @@ public class FusionCommands {
     private static String startTimestamp = "2014-01-01 09:00:00";
 	private static String endTimestamp = "2014-09-05 10:10:00";
 	private int interval = 12;
+	private int zoneId = 99;
 	
 	public FusionCommands(){
 		try{
@@ -61,7 +62,7 @@ public class FusionCommands {
 	
     public void requestCapacityRequirement(String timestamp){
     	try{
-    		RequestCapacityRequirement cap = new RequestCapacityRequirement(timestamp);
+    		RequestCapacityRequirement cap = new RequestCapacityRequirement(timestamp, zoneId);
 		    DataResponse resp = (DataResponse)client.getResponse(cap);
 		    if (resp.getData() instanceof DataError) {
 		    	System.out.println("DataError response was: "+ ((DataError)resp.getData()).getMessage());
@@ -78,7 +79,7 @@ public class FusionCommands {
     
     public void getActualTotal(){
     	    for(int i=0; i<10;i++){
-		    	RequestActualTotal request = new RequestActualTotal(RequestActualTotal.Type.SOLAR, startTimestamp, endTimestamp);
+		    	RequestActualTotal request = new RequestActualTotal(RequestActualTotal.Type.SOLAR, startTimestamp, endTimestamp, zoneId);
 		    	DataResponse response = (DataResponse)client.getResponse(request);
 				if(response.getData() instanceof DataError)
 					((DataError)response.getData()).getMessage();
@@ -86,7 +87,7 @@ public class FusionCommands {
 					ActualTotal data = (ActualTotal)response.getData();
 					System.out.println("Solar = "+ data.getValues()[0]);
 					
-					request = new RequestActualTotal(RequestActualTotal.Type.WIND, startTimestamp, endTimestamp);
+					request = new RequestActualTotal(RequestActualTotal.Type.WIND, startTimestamp, endTimestamp, zoneId);
 					response = (DataResponse)client.getResponse(request);
 					data = (ActualTotal)response.getData();
 					
@@ -103,7 +104,7 @@ public class FusionCommands {
 	}
     
     public void getForecastTotal(){
-    	RequestForecastTotal request = new RequestForecastTotal(RequestForecastTotal.Type.LOAD, startTimestamp, interval, endTimestamp);
+    	RequestForecastTotal request = new RequestForecastTotal(RequestForecastTotal.Type.LOAD, startTimestamp, interval, endTimestamp, zoneId);
 		DataResponse response = (DataResponse)client.getResponse(request);
 		
 		if(response.getData() instanceof DataError){
@@ -118,7 +119,7 @@ public class FusionCommands {
 	}
     
     public void getHAInterchageSchedule(){
-    	RequestHAInterchangeSchedule request = new RequestHAInterchangeSchedule(startTimestamp, endTimestamp);
+    	RequestHAInterchangeSchedule request = new RequestHAInterchangeSchedule(startTimestamp, endTimestamp, zoneId);
 		DataResponse response = (DataResponse)client.getResponse(request);
 		if(response.getData() instanceof DataError){
 			((DataError)response.getData()).getMessage();
@@ -131,7 +132,7 @@ public class FusionCommands {
 	}
 	
 	public void getRTEDSchedule(){
-		RequestRTEDSchedule request = new RequestRTEDSchedule(startTimestamp, interval,endTimestamp);
+		RequestRTEDSchedule request = new RequestRTEDSchedule(startTimestamp, interval,endTimestamp, zoneId);
 		DataResponse response = (DataResponse)client.getResponse(request);
 		if(response.getData() instanceof DataError){
 			((DataError)response.getData()).getMessage();
@@ -153,13 +154,14 @@ public class FusionCommands {
 		int intervalId=1;
 		int up=1;
 		int down=1;
+		int zoneId = 1;
 		
-		CapacityRequirement data = new CapacityRequirement(timestamp,confidence,intervalId,up,down);
+		CapacityRequirement data = new CapacityRequirement(timestamp,confidence,intervalId,up,down,zoneId);
 		UploadRequest request = new UploadRequest(data, "CapacityRequirement");
 		UploadResponse response  = (UploadResponse)client.getResponse(request);
 		
-		/*if(response.isSuccess())
-				client.publish("/topic/goss/fusion/capacity", data,RESPONSE_FORMAT.JSON);*/
+		if(response.isSuccess())
+				client.publish("/topic/goss/fusion/capacity", data,RESPONSE_FORMAT.JSON);
 		if(response.getMessage()!=null)
 			System.out.println(response.getMessage());
 		
@@ -168,7 +170,7 @@ public class FusionCommands {
 	public void requestCapacityRequirement(){
 		String timestamp = "2013-1-21 01:01:01";
 		
-		RequestCapacityRequirement request = new RequestCapacityRequirement(timestamp);
+		RequestCapacityRequirement request = new RequestCapacityRequirement(timestamp, zoneId);
 		DataResponse response = (DataResponse)client.getResponse(request);
 		CapacityRequirementValues data =null;
 		
@@ -181,7 +183,7 @@ public class FusionCommands {
 			System.out.println(data.getTimestamp()[0]);
 		}
 		}
-		request = new RequestCapacityRequirement(timestamp,RequestCapacityRequirement.Parameter.CONFIDENCE,95);
+		request = new RequestCapacityRequirement(timestamp,RequestCapacityRequirement.Parameter.CONFIDENCE,95, zoneId);
 		response = (DataResponse)client.getResponse(request);
 		if(response.getData() instanceof DataError){
 			((DataError)response.getData()).getMessage();
@@ -193,7 +195,7 @@ public class FusionCommands {
 		}
 		}
 		
-		request = new RequestCapacityRequirement(timestamp,RequestCapacityRequirement.Parameter.INTERVAL,1);
+		request = new RequestCapacityRequirement(timestamp,RequestCapacityRequirement.Parameter.INTERVAL,1, zoneId);
 		response = (DataResponse)client.getResponse(request);
 		if(response.getData() instanceof DataError){
 			((DataError)response.getData()).getMessage();
@@ -294,3 +296,4 @@ public class FusionCommands {
 
 
 }
+*/

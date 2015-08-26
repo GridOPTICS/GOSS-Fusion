@@ -1,4 +1,4 @@
-package pnnl.goss.fusion.itests;
+/*package pnnl.goss.fusion.itests;
 
 import static org.amdatu.testing.configurator.TestConfigurator.cleanUp;
 import static org.amdatu.testing.configurator.TestConfigurator.configuration;
@@ -97,3 +97,4 @@ public class GossIntegrationTestSupport {
 	}
 
 }
+*/

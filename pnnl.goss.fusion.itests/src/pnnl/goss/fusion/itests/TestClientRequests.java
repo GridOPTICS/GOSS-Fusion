@@ -1,4 +1,4 @@
-package pnnl.goss.fusion.itests;
+/*package pnnl.goss.fusion.itests;
 //
 import static org.amdatu.testing.configurator.TestConfigurator.configure;
 import static org.amdatu.testing.configurator.TestConfigurator.serviceDependency;
@@ -73,7 +73,7 @@ public class TestClientRequests {
 			Credentials credentials = new UsernamePasswordCredentials("user1", "123");
 			Client client = clientFactory.create(PROTOCOL.OPENWIRE,credentials);
 			System.out.println("Client set creds created");
-			RequestActualTotal req = new RequestActualTotal(Type.LOAD, "2015-01-01");
+			RequestActualTotal req = new RequestActualTotal(Type.LOAD, "2015-01-01",99);
 			System.out.println("Client Created request");
 			Response response = client.getResponse(req);
 			System.out.println("Client Sent request to server");
@@ -113,7 +113,7 @@ public class TestClientRequests {
 		try{
 			Credentials credentials = new UsernamePasswordCredentials("user1", "123");
 			Client client = clientFactory.create(PROTOCOL.OPENWIRE, credentials);
-			RequestCapacityRequirement req = new RequestCapacityRequirement("2013-01-21 00:06:00");
+			RequestCapacityRequirement req = new RequestCapacityRequirement("2013-01-21 00:06:00",99);
 			Response resp = client.getResponse(req);
 			assertNotNull(resp);
 			assertTrue("DataRespons it wasn't", resp instanceof DataResponse);
@@ -130,3 +130,4 @@ public class TestClientRequests {
 	}
 	
 }
+*/
