@@ -104,7 +104,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 				if (request1.getEndTimeStamp() == null) {
 					dbQuery = "select * from fusion.rte_d_total where `TimeStamp` = '"
 							+ request1.getStartTimestamp()
-							+ "' order by IntervalID";
+							+ "' and ZoneId = "+request1.getZoneId()+" order by IntervalID";
 				} else {
 					if(request1.getInterval()!=0)
 
@@ -113,16 +113,16 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 								+request1.getStartTimestamp()+"' and '"
 								+request1.getEndTimeStamp()+"' and "
 								+"IntervalID <= "+request1.getInterval()
-								+" order by IntervalID";
+								+" and ZoneId = "+request1.getZoneId()+" order by IntervalID";
 						else
 							dbQuery = "select * from fusion.rte_d_total "
 									+ "where `TimeStamp` between '"
 									+request1.getStartTimestamp()+"' and '"
 									+request1.getEndTimeStamp()+"' "
-									+" order by IntervalID";
+									+" and ZoneId = "+request1.getZoneId()+" order by IntervalID";
 				}
 
-				log.debug(dbQuery);
+				System.out.println(dbQuery);
 				rs = stmt.executeQuery(dbQuery);
 
 				if(request1.isViz()==false){
@@ -131,6 +131,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 					List<Double> genList = new ArrayList<Double>();
 					List<Double> minList = new ArrayList<Double>();
 					List<Double> maxList = new ArrayList<Double>();
+					List<Integer> zoneList = new ArrayList<Integer>();
 					
 					while (rs.next()) {
 						timestampsList.add(rs.getString("TimeStamp"));
@@ -138,6 +139,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 						genList.add(rs.getDouble("Gen"));
 						minList.add(rs.getDouble("Min"));
 						maxList.add(rs.getDouble("Max"));
+						zoneList.add(rs.getInt("ZoneId"));
 					}
 
 					RTEDSchedule rtedSchedule = new RTEDSchedule();
@@ -146,6 +148,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 					rtedSchedule.setGenValues(genList.toArray(new Double[genList.size()]));
 					rtedSchedule.setMinValues(minList.toArray(new Double[minList.size()]));
 					rtedSchedule.setMaxValues(maxList.toArray(new Double[maxList.size()]));
+					rtedSchedule.setZoneIds(zoneList.toArray(new Integer[zoneList.size()]));
 					data = rtedSchedule;
 					
 					}
@@ -160,6 +163,7 @@ public class RequestRTEDScheduleHandler implements RequestHandler {
 							rtedScheduleData.setMaxValue(rs.getDouble("Max"));
 							rtedScheduleData.setMinValue(rs.getDouble("Min"));
 							rtedScheduleData.setTimestamp(rs.getString("TimeStamp"));
+							rtedScheduleData.setZoneID(rs.getInt("ZoneId"));
 							list.add(rtedScheduleData);
 						}
 						data = list;

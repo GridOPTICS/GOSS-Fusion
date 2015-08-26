@@ -56,6 +56,7 @@ public class RTEDSchedule implements Serializable{
 	Double[] genValues;
 	Double[] minValues;
 	Double[] maxValues;
+	Integer[] zoneIds;
 	
 	public String[] getTimestamps() {
 		return timestamps;
@@ -87,6 +88,13 @@ public class RTEDSchedule implements Serializable{
 	public void setMaxValues(Double[] maxValues) {
 		this.maxValues = maxValues;
 	}
+	public Integer[] getZoneIds() {
+		return zoneIds;
+	}
+	public void setZoneIds(Integer[] zoneIds) {
+		this.zoneIds = zoneIds;
+	}
+	
 	
 	
 

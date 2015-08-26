@@ -6,6 +6,7 @@ public class VizRequest implements Serializable{
 	
 	private static final long serialVersionUID = -2872405645401318090L;
 	
+	String user;
 	String type;
 	String timestamp;
 	Integer range;
@@ -13,7 +14,16 @@ public class VizRequest implements Serializable{
 	String endTimestamp;
 	Integer intervalId;
 	Integer interfaceId;
+	Integer zoneId;
 	
+	
+	
+	public String getUser() {
+		return user;
+	}
+	public void setUser(String user) {
+		this.user = user;
+	}
 	public String getType() {
 		return type;
 	}
@@ -55,6 +65,12 @@ public class VizRequest implements Serializable{
 	}
 	public void setInterfaceId(Integer interfaceId) {
 		this.interfaceId = interfaceId;
+	}
+	public Integer getZoneId() {
+		return zoneId;
+	}
+	public void setZoneId(Integer zoneId) {
+		this.zoneId = zoneId;
 	}
 	
 	

@@ -53,21 +53,26 @@ public class RequestRTEDSchedule extends Request {
 	String startTimestamp;
 	String endTimeStamp;
 	int interval;
+	int zoneId;
+	
 	boolean viz= false;
 	
-	public RequestRTEDSchedule(String startTimestamp){
+	public RequestRTEDSchedule(String startTimestamp, int zoneId){
 		this.startTimestamp = startTimestamp;
+		this.zoneId = zoneId;
 	}
 	
-	public RequestRTEDSchedule(String startTimestamp, int interval, String endTiemstamp){
+	public RequestRTEDSchedule(String startTimestamp, int interval, String endTiemstamp, int zoneId){
 		this.startTimestamp = startTimestamp;
 		this.endTimeStamp = endTiemstamp;
 		this.interval = interval;
+		this.zoneId = zoneId;
 	}
 	
-	public RequestRTEDSchedule(String startTimestamp, String endTiemstamp){
+	public RequestRTEDSchedule(String startTimestamp, String endTiemstamp, int zoneId){
 		this.startTimestamp = startTimestamp;
 		this.endTimeStamp = endTiemstamp;
+		this.zoneId = zoneId;
 	}	
 	
 	public String getStartTimestamp() {
@@ -98,6 +103,15 @@ public class RequestRTEDSchedule extends Request {
 	public void setViz(boolean viz) {
 		this.viz = viz;
 	}
+
+	public int getZoneId() {
+		return zoneId;
+	}
+
+	public void setZoneId(int zoneId) {
+		this.zoneId = zoneId;
+	}
+	
 	
 
 

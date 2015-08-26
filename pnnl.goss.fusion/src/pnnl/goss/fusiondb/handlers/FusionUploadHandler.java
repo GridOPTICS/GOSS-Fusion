@@ -65,7 +65,9 @@ import pnnl.goss.core.server.RequestUploadHandler;
 import pnnl.goss.fusiondb.auth.FusionUploadAuthHandler;
 import pnnl.goss.fusiondb.datamodel.CapacityRequirement;
 import pnnl.goss.fusiondb.datamodel.GeneratorData;
+import pnnl.goss.fusiondb.datamodel.HAInterchangeScheduleData;
 import pnnl.goss.fusiondb.datamodel.InterfacesViolation;
+import pnnl.goss.fusiondb.datamodel.RTEDScheduleData;
 import pnnl.goss.fusiondb.datamodel.VoltageStabilityViolation;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
@@ -93,6 +95,8 @@ public class FusionUploadHandler implements RequestUploadHandler {
 		auths.put(GeneratorData.class.getSimpleName(), FusionUploadAuthHandler.class);
 		auths.put(InterfacesViolation.class.getSimpleName(), FusionUploadAuthHandler.class);
 		auths.put(VoltageStabilityViolation.class.getSimpleName(), FusionUploadAuthHandler.class);
+		auths.put(RTEDScheduleData.class.getSimpleName(), FusionUploadAuthHandler.class);
+		auths.put(HAInterchangeScheduleData.class.getSimpleName(), FusionUploadAuthHandler.class);
 		
 		return auths;
 	}
@@ -111,6 +115,10 @@ public class FusionUploadHandler implements RequestUploadHandler {
 			success = uploadInterfacesViolation((InterfacesViolation) data);
 		} else if (dataType.equals(VoltageStabilityViolation.class.getSimpleName())) {
 			success = uploadVoltageStabilityViolation((VoltageStabilityViolation) data);
+		} else if (dataType.equals(RTEDScheduleData.class.getSimpleName())) {
+			success = uploadRTEDScheduleData((RTEDScheduleData) data);
+		} else if (dataType.equals(HAInterchangeScheduleData.class.getSimpleName())) {
+			success = uploadHAInterchangeScheduleData((HAInterchangeScheduleData) data);
 		} else {
 			response = new UploadResponse(false);
 			response.setMessage("Unknown datatype: " + dataType	+ " specified.");
@@ -157,8 +165,8 @@ public class FusionUploadHandler implements RequestUploadHandler {
 	
 	private boolean uploadCapacityRequirement(CapacityRequirement data){
 		
-		String queryString = "replace into capacity_requirements(`timestamp`,confidence,interval_id,up,down) values "+
-								"('"+data.getTimestamp()+"',"+data.getConfidence()+","+data.getIntervalId()+","+data.getUp()+","+data.getDown()+")";
+		String queryString = "replace into capacity_requirements(`timestamp`,confidence,interval_id,up,down,zoneid) values "+
+								"('"+data.getTimestamp()+"',"+data.getConfidence()+","+data.getIntervalId()+","+data.getUp()+","+data.getDown()+","+data.getZoneId()+")";
 		
 		log.debug(queryString);
 		int rows = executeUploadDataSql(queryString);
@@ -229,6 +237,43 @@ public class FusionUploadHandler implements RequestUploadHandler {
 				+ data.getProbability()+","
 				+ data.getSize()+","
 				+ data.getLimit()+")";
+		
+		log.debug(queryString);
+		int rows = executeUploadDataSql(queryString);
+		
+		return (rows != -1);		
+	}
+	
+	private boolean uploadRTEDScheduleData(RTEDScheduleData data) {
+		String queryString = "replace into rte_d_total("
+				+ "`timestamp`,"
+				+ "gen,"
+				+ "max,"
+				+ "min, intervalid, zoneid) values ('"
+				+ data.getTimestamp()+"',"
+				+ data.getGenValue()+","
+				+ data.getMaxValue()+","
+				+ data.getMinValue()+","
+				+ data.getInterval()+","
+				+ data.getZoneID()+")";
+		
+		log.debug(queryString);
+		int rows = executeUploadDataSql(queryString);
+		
+		return (rows != -1);		
+	}
+	
+	
+	private boolean uploadHAInterchangeScheduleData(HAInterchangeScheduleData data) {
+		String queryString = "replace into ha_interchange_schedule("
+				+ "`timestamp`,"
+				+ "intervalid,"
+				+ "`int`,"
+				+ "zoneid) values ('"
+				+ data.getTimestamps()+"',"
+				+ data.getIntervalId()+","
+				+ data.getValues()+","
+				+ data.getZoneId()+")";
 		
 		log.debug(queryString);
 		int rows = executeUploadDataSql(queryString);

@@ -56,6 +56,8 @@ public class RTEDScheduleData implements Serializable{
 	Double genValue;
 	Double minValue;
 	Double maxValue;
+	Integer zoneID;
+	
 	public String getTimestamp() {
 		return timestamp;
 	}
@@ -85,6 +87,12 @@ public class RTEDScheduleData implements Serializable{
 	}
 	public void setMaxValue(Double maxValue) {
 		this.maxValue = maxValue;
+	}
+	public Integer getZoneID() {
+		return zoneID;
+	}
+	public void setZoneID(Integer zoneID) {
+		this.zoneID = zoneID;
 	}
 	
 	

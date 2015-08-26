@@ -53,6 +53,7 @@ public class HAInterchangeSchedule implements Serializable{
 	
 	String[] timestamps;
 	Double[] values;
+	Integer[] zoneId;
 	
 	public String[] getTimestamps() {
 		return timestamps;
@@ -65,6 +66,12 @@ public class HAInterchangeSchedule implements Serializable{
 	}
 	public void setValues(Double[] values) {
 		this.values = values;
+	}
+	public Integer[] getZoneId() {
+		return zoneId;
+	}
+	public void setZoneId(Integer[] zoneId) {
+		this.zoneId = zoneId;
 	}
 
 

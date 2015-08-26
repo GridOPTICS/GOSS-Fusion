@@ -1,0 +1,290 @@
+<!doctype html>
+<html class="no-js" lang="en">
+ <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Integrated Demo | Generation Capability</title>
+      
+    <script src="js/jquery-1.7.2.min.js"></script>
+    <script src="js/stomp.js"></script>
+	
+	<link rel="stylesheet" href="css/foundation.min.css" />
+	
+  	</head>
+<body>
+
+ <div class="row">
+	  <div class="large-12 columns">
+        <h2>Upload Data</h2>
+      </div>
+    </div>
+	<br/>
+	
+	
+	        
+		<div class="row">
+			<div class="large-3 columns">
+				<label>Timestamp: 
+					<input type="text" id="timevalue" value="2015-08-12 15:00:00"/>
+				</label>
+			</div>
+			<div class="large-2 columns">
+			  <label>Select File Type:
+				<select id="fileType">
+				<option value="default">Select</option>
+				<option value="ramping">Ramping Generation</option>
+				<option value="schedule">Interchange Schedule</option>
+				<!--<option value="erin">Erin</option>-->
+				</select>
+			  </label>
+			</div>
+			<div class="large-7 columns">
+				<label>Generation File:
+					<input type="file" id="fileinput" accept=".csv"/>
+				</label>
+			</div>
+		</div>
+		
+		
+		<div class="row">
+			
+			
+			<div class="large-1 columns">
+				<label>
+					<input type="button" class="tiny round button" id="calculate" value="Calculate" onclick="upload()"/>
+				</label>
+			</div>
+		</div>
+		
+		
+		
+			
+			<div class="row">
+				<div class="large-6 columns">
+					<table id="palouse">
+						<thead>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+				<div class="large-6 columns">
+					<table id="puget">
+						<thead>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+         
+
+<script type="text/javascript">
+
+/*
+for(j=1;j<=15;j++){
+  
+     $('#user')
+         .append($("<option></option>")
+         .attr("value",'user'+j)
+         .text('User'+j)); 
+
+
+}*/
+
+function upload(){
+	$("#palouse tr").remove();
+	$("#puget tr").remove();
+	
+	var fileType = $("#fileType").val();
+	if(fileType=="ramping")
+		calcGenCap();
+	else if(fileType=="schedule")
+		uploadSchedule();
+}
+
+function uploadSchedule(){
+
+    var f = fileinput.files[0]; 
+    var fileType = $("#fileType").val();
+	
+	if(fileType == "default"){
+		alert("Select File Type")
+		return;
+	}
+	if (!f) {
+	      alert("Failed to load file");
+	    }
+	
+	var r = new FileReader();
+	r.readAsText(f);
+	
+	r.onload = function(e) { 
+		var contents = e.target.result;
+    	var request = {timestamp: timevalue.value,
+    					fileContent:contents.toString()
+    				}
+    	
+    	$.ajax({
+            type: 'POST',
+            url: '/fusion/api/upload/schedule',
+            dataType: 'json',
+            contentType: 'application/json',
+            data: JSON.stringify(request), 
+            success: function(data){
+				console.log('Success');
+				console.log(JSON.stringify(data));
+				var obj = jQuery.parseJSON(JSON.stringify(data));
+				updateTableSchedule(obj.data);
+			},
+            failure: function(data){
+            	console.log('Failure');
+                console.log(data.toString());
+                alert("Falure: "+ data.toString());
+            },
+            error: function(a, b, c){
+                alert( JSON.stringify(a))
+                alert( JSON.stringify(b))
+                alert( JSON.stringify(c))
+            	alert( JSON.parse(a))
+            	alert(a+ b+ c);
+            }
+
+        });	
+	}
+}
+
+function calcGenCap() {
+    var f = fileinput.files[0]; 
+    var fileType = $("#fileType").val();
+	
+	if(fileType == "default"){
+		alert("Select File Type")
+		return;
+	}
+	if (!f) {
+	      alert("Failed to load file");
+	    }
+	
+	var r = new FileReader();
+	r.readAsText(f);
+	
+	r.onload = function(e) { 
+		var contents = e.target.result;
+    	var request = {timestamp: timevalue.value,
+    					fileContent:contents.toString()
+    				}
+    	
+    	$.ajax({
+            type: 'POST',
+            url: '/fusion/api/upload/ramping',
+            dataType: 'json',
+            contentType: 'application/json',
+            data: JSON.stringify(request), 
+            success: function(data){
+				console.log('Success');
+				console.log(JSON.stringify(data));
+				var obj = jQuery.parseJSON(JSON.stringify(data));
+            	updateTable(obj.data);
+			},
+            failure: function(data){
+            	console.log('Failure');
+                console.log(data.toString());
+                alert("Falure: "+ data.toString());
+            },
+            error: function(a, b, c){
+                alert( JSON.stringify(a))
+                alert( JSON.stringify(b))
+                alert( JSON.stringify(c))
+            	alert( JSON.parse(a))
+            	alert(a+ b+ c);
+            }
+
+        });	
+	}
+    		     
+}
+  
+function updateTable(message){
+	$("#palouse tr").remove();
+	$("#puget tr").remove();
+	
+	var str = message;
+	var rows = str.split("ll");
+		
+	for(i=0;i<25;i++){
+		var columns = rows[i].toString().split(",");
+		if(i==0){
+			var trHTML = '<tr>'+
+        			'<th>' + columns[1] +'</th>'+
+        			'<th>' + columns[2] + '</th>'+
+        			'<th>' + columns[3] + '</th>'+
+        			'<th>' + columns[4] + '</th>'+
+        			'</tr>';
+					
+			$('#palouse thead').append('<tr><th colspan="4">Palouse</th></tr>'+trHTML);
+			$('#puget thead').append('<tr><th colspan="4">Puget</th></th>'+trHTML);
+		}
+		else{
+			var trHTML = '<tr>'+
+        			'<td>' + columns[1] +'</td>'+
+        			'<td>' + columns[2] + '</td>'+
+        			'<td>' + columns[3] + '</td>'+
+        			'<td>' + columns[4] + '</td>'+
+        			'</tr>';
+				
+			if(columns[0] == 1){
+				$('#palouse tbody').append(trHTML);
+			}
+				
+			if(columns[0] == 2){
+				$('#puget tbody').append(trHTML);
+			}
+		}
+	}
+
+	$('#example tbody').append(trHTML);
+ }
+
+function updateTableSchedule(message){
+	$("#palouse tr").remove();
+	$("#puget tr").remove();
+	
+	var str = message;
+	var rows = str.split("ll");
+		
+	for(i=0;i<rows.length;i++){
+		var columns = rows[i].toString().split(",");
+		if(i==0){
+			var trHTML = '<tr>'+
+        			'<th>' + columns[1] +'</th>'+
+        			'<th>' + columns[2] + '</th>'+
+        			'<th>' + columns[3] + '</th>'+
+        			'</tr>';
+					
+			$('#palouse thead').append('<tr><th colspan="4">Palouse</th></tr>'+trHTML);
+			$('#puget thead').append('<tr><th colspan="4">Puget</th></th>'+trHTML);
+		}
+		else{
+			var trHTML = '<tr>'+
+        			'<td>' + columns[1] +'</td>'+
+        			'<td>' + columns[2] + '</td>'+
+        			'<td>' + columns[3] + '</td>'+
+        			'</tr>';
+				
+			if(columns[0] == 'PALOUSE'){
+				$('#palouse tbody').append(trHTML);
+			}
+				
+			if(columns[0] == 'PUGET'){
+				$('#puget tbody').append(trHTML);
+			}
+		}
+	}
+
+	$('#example tbody').append(trHTML);
+ }
+  
+</script>
+</body>
+<html>

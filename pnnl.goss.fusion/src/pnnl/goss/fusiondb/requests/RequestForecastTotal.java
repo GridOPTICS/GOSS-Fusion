@@ -56,25 +56,29 @@ public class RequestForecastTotal extends Request {
 	String startTimestamp;
 	String endTimeStamp;
 	int interval;
+	int zoneId;
 	boolean viz=false;
 	
-	public RequestForecastTotal(Type type, String startTimestamp, int interval){
+	public RequestForecastTotal(Type type, String startTimestamp, int interval, int zoneId){
 		this.type = type;
 		this.startTimestamp = startTimestamp;
-		this.interval = interval;;
+		this.interval = interval;
+		this.zoneId = zoneId;
 	}
 	
-	public RequestForecastTotal(Type type, String startTimestamp, int interval, String endTimestamp){
+	public RequestForecastTotal(Type type, String startTimestamp, int interval, String endTimestamp, int zoneId){
 		this.type = type;
 		this.startTimestamp = startTimestamp;
 		this.interval = interval;
 		this.endTimeStamp = endTimestamp;
+		this.zoneId = zoneId;
 	}
 	
-	public RequestForecastTotal(Type type, String startTimestamp, String endTimestamp){
+	public RequestForecastTotal(Type type, String startTimestamp, String endTimestamp, int zoneId){
 		this.type = type;
 		this.startTimestamp = startTimestamp;
 		this.endTimeStamp = endTimestamp;
+		this.zoneId = zoneId;
 	}
 	
 	public Type getType() {
@@ -109,5 +113,14 @@ public class RequestForecastTotal extends Request {
 	public void setViz(boolean viz) {
 		this.viz = viz;
 	}
+
+	public int getZoneId() {
+		return zoneId;
+	}
+
+	public void setZoneId(int zoneId) {
+		this.zoneId = zoneId;
+	}
+	
 
 }

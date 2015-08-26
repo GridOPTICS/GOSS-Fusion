@@ -65,7 +65,9 @@ import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.RequestHandler;
 import pnnl.goss.fusiondb.auth.FusionAuthHandler;
+import pnnl.goss.fusiondb.datamodel.ActualTotalData;
 import pnnl.goss.fusiondb.datamodel.HAInterchangeSchedule;
+import pnnl.goss.fusiondb.datamodel.HAInterchangeScheduleData;
 import pnnl.goss.fusiondb.requests.RequestHAInterchangeSchedule;
 import pnnl.goss.fusiondb.server.datasources.FusionDataSource;
 
@@ -101,31 +103,50 @@ public class RequestHAInterchangeScheduleHandler implements RequestHandler {
 			RequestHAInterchangeSchedule request1 = (RequestHAInterchangeSchedule) request;
 			
 			if (request1.getEndTimeStamp() == null) {
-				dbQuery = "select `TimeStamp`, `Int` from fusion.ha_interchange_schedule where `TimeStamp`  ='"+request1.getStartTimestamp()+"'";
+				dbQuery = "select `TimeStamp`, `Int`, IntervalID from fusion.ha_interchange_schedule where `TimeStamp`  ='"+request1.getStartTimestamp()+"' and ZoneId = "+request1.getZoneId();
 			} else {
 
-				dbQuery = "select `TimeStamp`, `Int` from fusion.ha_interchange_schedule where `TimeStamp`  between '"+request1.getStartTimestamp()+"' and"+
-						" '"+request1.getEndTimeStamp()+"' order by `TimeStamp`";
+				dbQuery = "select `TimeStamp`, `Int`, IntervalID from fusion.ha_interchange_schedule where `TimeStamp`  between '"+request1.getStartTimestamp()+"' and"+
+						" '"+request1.getEndTimeStamp()+"' and ZoneId = "+request1.getZoneId()+" order by `TimeStamp`";
 			}
 
 			System.out.println(dbQuery);
 			rs = stmt.executeQuery(dbQuery);
 			
-			List<String> timestampsList = new ArrayList<String>();
-			List<Double> valuesList = new ArrayList<Double>();
-			
-			
-			while (rs.next()) {
-				timestampsList.add(rs.getString(1));
-				valuesList.add(rs.getDouble(2));
+			if(request1.isViz()==false){
+				List<String> timestampsList = new ArrayList<String>();
+				List<Double> valuesList = new ArrayList<Double>();
+				List<Integer> zoneList = new ArrayList<Integer>();
+				
+				
+				while (rs.next()) {
+					timestampsList.add(rs.getString(1));
+					valuesList.add(rs.getDouble(2));
+				}
+	
+				HAInterchangeSchedule haInterchangeSchedule = new HAInterchangeSchedule();
+				haInterchangeSchedule.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
+				haInterchangeSchedule.setValues(valuesList.toArray(new Double[valuesList.size()]));
+				haInterchangeSchedule.setZoneId(zoneList.toArray(new Integer[zoneList.size()]));
+				data = haInterchangeSchedule;
+				
 			}
-
-			HAInterchangeSchedule haInterchangeSchedule = new HAInterchangeSchedule();
-			haInterchangeSchedule.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
-			haInterchangeSchedule.setValues(valuesList.toArray(new Double[valuesList.size()]));
+			else{
+				ArrayList<HAInterchangeScheduleData> list = new ArrayList<HAInterchangeScheduleData>();
+				HAInterchangeScheduleData interchangeScheduleData=null;
+				while (rs.next()) {
+					interchangeScheduleData = new HAInterchangeScheduleData();
+					interchangeScheduleData.setTimestamps(rs.getString(1));
+					interchangeScheduleData.setValues(rs.getDouble(2));
+					interchangeScheduleData.setIntervalId(rs.getInt(3));
+					list.add(interchangeScheduleData);
+				}
+				data = list;
+				
+			}
 			
 			
-			data = haInterchangeSchedule;
+			
 			connection.close();
 			
 		} catch (Exception e) {

@@ -106,10 +106,10 @@ public class RequestActualTotalHandler implements RequestHandler {
 			
 			if (request1.getEndTimeStamp() != null) {
 				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` between '"+request1.getStartTimestamp()+"'"+
-						" and  '"+request1.getEndTimeStamp()+"' order by `TimeStamp`";
+						" and  '"+request1.getEndTimeStamp()+"' and ZoneId = "+request1.getZoneId()+" order by `TimeStamp`";
 			} else {
 
-				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` ='"+request1.getStartTimestamp()+"' order by `TimeStamp`";
+				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` ='"+request1.getStartTimestamp()+"' and ZoneId = "+request1.getZoneId()+" order by `TimeStamp`";
 			}
 
 			System.out.println(dbQuery);
@@ -139,6 +139,7 @@ public class RequestActualTotalHandler implements RequestHandler {
 					actualTotal.setTimestamps(rs.getString(1));
 					actualTotal.setType(request1.getType().toString());
 					actualTotal.setValue(rs.getDouble(2));
+					actualTotal.setZoneId(rs.getInt("ZoneId"));
 					list.add(actualTotal);
 				}
 				data = list;

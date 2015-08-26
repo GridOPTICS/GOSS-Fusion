@@ -102,11 +102,11 @@ public class RequestForecastTotalHandler implements RequestHandler {
 			String tableName = "rte_"+request1.getType().toString().toLowerCase()+"_forecast";
 
 			if (request1.getEndTimeStamp() == null) {
-				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` = '"+request1.getStartTimestamp()+"' AND IntervalID <= "+request1.getInterval()+" order by IntervalID";
+				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` = '"+request1.getStartTimestamp()+"'  and ZoneId = "+request1.getZoneId()+" order by IntervalID";
 			} else {
 
 				dbQuery = "select * from fusion."+tableName+" where `TimeStamp` >= '"+request1.getStartTimestamp()+"' and `TimeStamp`<'"+request1.getEndTimeStamp()+"' and "+
-						"IntervalID <="+request1.getInterval()+"  order by `TimeStamp`";
+						" ZoneId = "+request1.getZoneId()+" order by `TimeStamp`";
 			}
 
 			System.out.println(dbQuery);
@@ -116,11 +116,14 @@ public class RequestForecastTotalHandler implements RequestHandler {
 				List<Double> valuesList = new ArrayList<Double>();
 				List<String> timestampsList = new ArrayList<String>();
 				List<Integer> intervalsList = new ArrayList<Integer>();
+				List<Integer> zoneList = new ArrayList<Integer>();
 				
 				while (rs.next()) {
 					timestampsList.add(rs.getString(1));
 					intervalsList.add(rs.getInt(2));
 					valuesList.add(rs.getDouble(3));
+					zoneList.add(rs.getInt(4));
+					
 					
 				}
 	
@@ -129,6 +132,7 @@ public class RequestForecastTotalHandler implements RequestHandler {
 				forecastTotal.setTimestamps(timestampsList.toArray(new String[timestampsList.size()]));
 				forecastTotal.setValues(valuesList.toArray(new Double[valuesList.size()]));
 				forecastTotal.setIntervals(intervalsList.toArray(new Integer[intervalsList.size()]));
+				forecastTotal.setZoneId(zoneList.toArray(new Integer[zoneList.size()]));
 				
 				data = forecastTotal;
 			}
@@ -141,6 +145,7 @@ public class RequestForecastTotalHandler implements RequestHandler {
 					forecastTotal.setType(request1.getType().toString());
 					forecastTotal.setValue(rs.getDouble(3));
 					forecastTotal.setInterval(rs.getInt(2));
+					forecastTotal.setZoneId(rs.getInt(4));
 					list.add(forecastTotal);
 				}
 				data = list;

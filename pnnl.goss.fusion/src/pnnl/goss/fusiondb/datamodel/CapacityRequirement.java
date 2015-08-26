@@ -56,13 +56,15 @@ public class CapacityRequirement implements Serializable{
 	int intervalId;
 	int up;
 	int down;
+	int zoneId;
 	
-	public CapacityRequirement(String timestamp, int confidence, int intervalId,	int up,	int down){
+	public CapacityRequirement(String timestamp, int confidence, int intervalId,int up,	int down, int zoneId){
 		this.timestamp = timestamp;
 		this.confidence = confidence;
 		this.intervalId = intervalId;
 		this.up = up;
 		this.down = down;
+		this.zoneId = zoneId;
 	}
 	
 	public String getTimestamp() {
@@ -95,5 +97,14 @@ public class CapacityRequirement implements Serializable{
 	public void setDown(int down) {
 		this.down = down;
 	}
+
+	public int getZoneId() {
+		return zoneId;
+	}
+
+	public void setZoneId(int zoneId) {
+		this.zoneId = zoneId;
+	}
+	
 
 }

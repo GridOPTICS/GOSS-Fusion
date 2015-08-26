@@ -23,13 +23,11 @@ import pnnl.goss.core.server.HandlerNotFoundException;
 import pnnl.goss.core.server.RequestHandlerRegistry;
 import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.fusiondb.datamodel.VizRequest;
-import pnnl.goss.fusiondb.handlers.RequestActualTotalHandler;
-import pnnl.goss.fusiondb.handlers.RequestForecastTotalHandler;
-import pnnl.goss.fusiondb.handlers.RequestRTEDScheduleHandler;
 import pnnl.goss.fusiondb.requests.RequestActualTotal;
 import pnnl.goss.fusiondb.requests.RequestActualTotal.Type;
 import pnnl.goss.fusiondb.requests.RequestCapacityRequirement;
 import pnnl.goss.fusiondb.requests.RequestForecastTotal;
+import pnnl.goss.fusiondb.requests.RequestHAInterchangeSchedule;
 import pnnl.goss.fusiondb.requests.RequestInterfacesViolation;
 import pnnl.goss.fusiondb.requests.RequestRTEDSchedule;
 
@@ -66,6 +64,7 @@ public class DataStreamLauncher{
 	String historicForecastLoadTopic = historicTopic+"/forecast_load";
 	String historicForecastSolarTopic = historicTopic+"/forecast_solar";
 	String historicForecastWindTopic = historicTopic+"/forecast_wind";
+	String historicGenerationSchedule = historicTopic+"/generation_sched";
 
 	String currentTopic = "goss/fusion/viz/current";
 	String currentCapaReqTopic  = currentTopic+"/capareq";
@@ -77,6 +76,7 @@ public class DataStreamLauncher{
 	String currentForecastLoadTopic = currentTopic+"/forecast/load";
 	String currentForecastSolarTopic = currentTopic+"/forecast/solar";
 	String currentForecastWindTopic = currentTopic+"/forecast/wind";
+	String currentGenerationSchedule = currentTopic+"/generation_sched";
 	
 	String interfaceViolationTOpic = "goss/fusion/viz/interfaces_violation";
 	
@@ -137,7 +137,8 @@ public class DataStreamLauncher{
 									Date date = dateFormat.parse(endTimestamp);
 									date = new Date(date.getTime()-(vizRequest.getRange()*60*60*1000));
 									String timestamp = dateFormat.format(date);
-									publishHistoricData(timestamp, endTimestamp);
+									
+									publishHistoricData(timestamp, endTimestamp, vizRequest.getZoneId(), vizRequest.getUser());
 								}
 								if(vizRequest.getType().toLowerCase().equals("current")){
 									Thread thread = new Thread(new Runnable() {
@@ -151,9 +152,9 @@ public class DataStreamLauncher{
 												Date date = dateFormat.parse(timestamp);
 												date = new Date(date.getTime()+(vizRequest.getRange()*60*1000));
 												String endTimestamp = dateFormat.format(date);
-												publishHistoricData(timestamp, endTimestamp);
+												publishHistoricData(timestamp, endTimestamp, vizRequest.getZoneId(), vizRequest.getUser());
 												while(isRunning){
-													publishCurrentData(timestamp,endTimestamp);
+													publishCurrentData(timestamp,endTimestamp, vizRequest.getZoneId(), vizRequest.getUser());
 													timestamp = endTimestamp;
 													date = dateFormat.parse(timestamp);
 													date = new Date(date.getTime()+(vizRequest.getRange()*60*1000));
@@ -224,76 +225,86 @@ public class DataStreamLauncher{
 		
 		
 	}
-
+	
 	/**
 	 * queries and publishes historical data
 	 */
-	private void publishHistoricData(String timeStamp, String endTimestamp){
+	private void publishHistoricData(String timeStamp, String endTimestamp, int zoneId, String user){
 		
 		try{
-
+			
+		//Update topics
+			
 		// capacity requirement
-		Request request = new RequestCapacityRequirement(timeStamp,endTimestamp);
+		Request request = new RequestCapacityRequirement(timeStamp,endTimestamp, zoneId);
 		((RequestCapacityRequirement)request).setViz(true);
 		DataResponse response = (DataResponse)handler.handle(request);
-		client.publish(historicCapaReqTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicCapaReqTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		Gson gson = new Gson();
 		System.out.println(gson.toJson(response.getData()));
-
-		// total rted
-		request = new RequestRTEDSchedule(timeStamp, endTimestamp);
+		
+		// generation schedule
+		request = new RequestRTEDSchedule(timeStamp,endTimestamp, zoneId);
 		((RequestRTEDSchedule)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(historicInterchangeScheduleTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicGenerationSchedule+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		gson = new Gson();
+		System.out.println(gson.toJson(response.getData()));
+
+		// total hour ahead interchange schedule
+		request = new RequestHAInterchangeSchedule(timeStamp, endTimestamp, zoneId);
+		((RequestHAInterchangeSchedule)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
+		client.publish(historicInterchangeScheduleTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		// total interchange
-		request =  new RequestActualTotal(Type.INTERHCHANGE, timeStamp, endTimestamp);
+		request =  new RequestActualTotal(Type.INTERHCHANGE, timeStamp, endTimestamp, zoneId);
 		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(historicInterchangeTotalTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicInterchangeTotalTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		// actual load
-		request =  new RequestActualTotal(Type.LOAD, timeStamp, endTimestamp);
+		request =  new RequestActualTotal(Type.LOAD, timeStamp, endTimestamp, zoneId);
 		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(historicActualLoadTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicActualLoadTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		// actual wind
-		request =  new RequestActualTotal(Type.WIND, timeStamp, endTimestamp);
+		request =  new RequestActualTotal(Type.WIND, timeStamp, endTimestamp, zoneId);
 		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(historicActualWindTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicActualWindTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		// actual solar
-		request =  new RequestActualTotal(Type.SOLAR, timeStamp, endTimestamp);
+		request =  new RequestActualTotal(Type.SOLAR, timeStamp, endTimestamp, zoneId);
 		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(historicActualSolarTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicActualSolarTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		//forecast load
-		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.LOAD, timeStamp, endTimestamp);
+		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.LOAD, timeStamp, endTimestamp, zoneId);
 		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(historicForecastLoadTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicForecastLoadTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		//forecast solar
-		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.SOLAR, timeStamp, endTimestamp);
+		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.SOLAR, timeStamp, endTimestamp, zoneId);
 		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(historicForecastSolarTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicForecastSolarTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 
 		//forecast wind
-		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.WIND, timeStamp, endTimestamp);
+		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.WIND, timeStamp, endTimestamp, zoneId);
 		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(historicForecastWindTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(historicForecastWindTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		System.out.println(gson.toJson(response.getData()));
 		
 		}catch(HandlerNotFoundException e){
@@ -302,63 +313,69 @@ public class DataStreamLauncher{
 		
 	}
 
-	private void publishCurrentData(String timeStamp, String endTimestamp){
+	private void publishCurrentData(String timeStamp, String endTimestamp, int zoneId, String user){
 		
 		try{
 			
 		// capacity requirement
-		Request request = new RequestCapacityRequirement(timeStamp,endTimestamp);
+		Request request = new RequestCapacityRequirement(timeStamp,endTimestamp, zoneId);
 		((RequestCapacityRequirement)request).setViz(true);
 		DataResponse response = (DataResponse)handler.handle(request);
-		client.publish(currentCapaReqTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentCapaReqTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
-		// total rted
-		request = new RequestRTEDSchedule(timeStamp, endTimestamp);
+		// hour ahead interchange schedule
+		request = new RequestHAInterchangeSchedule(timeStamp, endTimestamp, zoneId);
+		((RequestHAInterchangeSchedule)request).setViz(true);
+		response = (DataResponse)handler.handle(request);
+		client.publish(currentInterchangeScheduleTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		
+		// generation schedule
+		request = new RequestRTEDSchedule(timeStamp,endTimestamp, zoneId);
 		((RequestRTEDSchedule)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(currentInterchangeScheduleTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentGenerationSchedule+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// total interchange
-		request =  new RequestActualTotal(Type.INTERHCHANGE, timeStamp, endTimestamp);
+		request =  new RequestActualTotal(Type.INTERHCHANGE, timeStamp, endTimestamp, zoneId);
 		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(currentInterchangeTotalTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentInterchangeTotalTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// actual load
-		request =  new RequestActualTotal(Type.LOAD, timeStamp, endTimestamp);
+		request =  new RequestActualTotal(Type.LOAD, timeStamp, endTimestamp, zoneId);
 		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(currentActualLoadTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentActualLoadTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// actual wind
-		request =  new RequestActualTotal(Type.WIND, timeStamp, endTimestamp);
+		request =  new RequestActualTotal(Type.WIND, timeStamp, endTimestamp, zoneId);
 		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(currentActualWindTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentActualWindTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		// actual solar
-		request =  new RequestActualTotal(Type.SOLAR, timeStamp, endTimestamp);
+		request =  new RequestActualTotal(Type.SOLAR, timeStamp, endTimestamp, zoneId);
 		((RequestActualTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(currentActualSolarTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentActualSolarTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		//forecast load
-		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.LOAD, timeStamp, endTimestamp);
+		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.LOAD, timeStamp, endTimestamp, zoneId);
 		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(currentForecastLoadTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentForecastLoadTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		//forecast solar
-		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.SOLAR, timeStamp, endTimestamp);
+		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.SOLAR, timeStamp, endTimestamp, zoneId);
 		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(currentForecastSolarTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentForecastSolarTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 
 		//forecast wind
-		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.WIND, timeStamp, endTimestamp);
+		request =  new RequestForecastTotal(pnnl.goss.fusiondb.requests.RequestForecastTotal.Type.WIND, timeStamp, endTimestamp, zoneId);
 		((RequestForecastTotal)request).setViz(true);
 		response = (DataResponse)handler.handle(request);
-		client.publish(currentForecastWindTopic, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
+		client.publish(currentForecastWindTopic+"/"+zoneId+"/"+user, (Serializable)response.getData(),  RESPONSE_FORMAT.JSON);
 		
 		}catch(HandlerNotFoundException e){
 			e.printStackTrace();

@@ -54,21 +54,25 @@ public class RequestCapacityRequirement extends Request {
 	String endTimestamp;
 	Parameter parameter=null;
 	int value=0;
+	int zoneId;
 	boolean viz=false;
 	
-	public RequestCapacityRequirement(String timestamp){
+	public RequestCapacityRequirement(String timestamp, int zoneId){
 		this.timestamp = timestamp;
+		this.zoneId = zoneId;
 	}
 	
-	public RequestCapacityRequirement(String timestamp, String endTimestamp){
+	public RequestCapacityRequirement(String timestamp, String endTimestamp, int zoneId){
 		this.timestamp = timestamp;
 		this.endTimestamp = endTimestamp;
+		this.zoneId = zoneId;
 	}
 	
-	public RequestCapacityRequirement(String timestamp, Parameter parameter, int value){
+	public RequestCapacityRequirement(String timestamp, Parameter parameter, int value, int zoneId){
 		this.timestamp = timestamp;
 		this.parameter = parameter;
 		this.value = value;
+		this.zoneId = zoneId;
 	}
 	
 	public String getTimestamp() {
@@ -94,6 +98,17 @@ public class RequestCapacityRequirement extends Request {
 	public void setViz(boolean viz) {
 		this.viz = viz;
 	}
+
+	public int getZoneId() {
+		return zoneId;
+	}
+
+	public void setZoneId(int zoneId) {
+		this.zoneId = zoneId;
+	}
+
+
+	
 	
 }
 

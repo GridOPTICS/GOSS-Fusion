@@ -56,6 +56,8 @@ public class CapacityRequirementValues implements Serializable{
 	Integer[] intervalId;
 	Integer[] up;
 	Integer[] down;
+	Integer[] zoneId;
+	
 	public String[] getTimestamp() {
 		return timestamp;
 	}
@@ -86,6 +88,13 @@ public class CapacityRequirementValues implements Serializable{
 	public void setDown(Integer[] down) {
 		this.down = down;
 	}
+	public Integer[] getZoneId() {
+		return zoneId;
+	}
+	public void setZoneId(Integer[] zoneId) {
+		this.zoneId = zoneId;
+	}
+	
 
 	
 	

@@ -54,6 +54,7 @@ public class ActualTotalData implements Serializable {
 	String type;
 	String timestamp;
 	Double value;
+	int zoneId;
 	
 	public String getType() {
 		return type;
@@ -73,6 +74,14 @@ public class ActualTotalData implements Serializable {
 	public void setTimestamps(String timestamp) {
 		this.timestamp = timestamp;
 	}
+	public int getZoneId() {
+		return zoneId;
+	}
+	public void setZoneId(int zoneId) {
+		this.zoneId = zoneId;
+	}
+	
+	
 	
 	
 	

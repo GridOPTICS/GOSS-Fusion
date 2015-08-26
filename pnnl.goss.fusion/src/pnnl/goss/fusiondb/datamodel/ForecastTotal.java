@@ -55,6 +55,7 @@ public class ForecastTotal implements Serializable {
 	Double[] values;
 	String[] timestamps;
 	Integer[] intervals;
+	Integer[] zoneId;
 	
 	public String getType() {
 		return type;
@@ -80,5 +81,12 @@ public class ForecastTotal implements Serializable {
 	public void setIntervals(Integer[] intervals) {
 		this.intervals = intervals;
 	}
+	public Integer[] getZoneId() {
+		return zoneId;
+	}
+	public void setZoneId(Integer[] zoneId) {
+		this.zoneId = zoneId;
+	}
+	
 
 }

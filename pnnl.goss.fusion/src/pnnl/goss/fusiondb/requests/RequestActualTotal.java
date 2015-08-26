@@ -55,17 +55,20 @@ public class RequestActualTotal extends Request {
 	Type valueType;
 	String startTimestamp;
 	String endTimeStamp;
+	int zoneId;
 	boolean viz = false;
 	
-	public RequestActualTotal(Type valueType, String startTimestamp){
+	public RequestActualTotal(Type valueType, String startTimestamp, int zoneId){
 		this.valueType = valueType;
 		this.startTimestamp = startTimestamp;
+		this.zoneId = zoneId;
 	}
 	
-	public RequestActualTotal(Type valueType, String startTimestamp, String endTimestamp){
+	public RequestActualTotal(Type valueType, String startTimestamp, String endTimestamp, int zoneId){
 		this.valueType = valueType;
 		this.startTimestamp = startTimestamp;
 		this.endTimeStamp = endTimestamp;
+		this.zoneId = zoneId;
 	}
 
 	public Type getType() {
@@ -99,6 +102,18 @@ public class RequestActualTotal extends Request {
 	public void setViz(boolean viz) {
 		this.viz = viz;
 	}
+
+	public int getZoneId() {
+		return zoneId;
+	}
+
+	public void setZoneId(int zoneId) {
+		this.zoneId = zoneId;
+	}
+	
+
+
+	
 	
 
 }

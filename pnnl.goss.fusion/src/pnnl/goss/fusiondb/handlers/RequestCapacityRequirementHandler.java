@@ -104,9 +104,9 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 			
 			//if no end timestamp is given 
 			if(request1.getEndTimestamp()==null)		
-				query+="where `timestamp` = '"+request1.getTimestamp()+"'";
+				query+="where `timestamp` = '"+request1.getTimestamp()+"' and ZoneId = "+request1.getZoneId();
 			else
-				query+="where `timeStamp` between '"+request1.getTimestamp() + "' and '"+request1.getEndTimestamp()+"'";
+				query+="where ZoneId = "+request1.getZoneId()+" and `timeStamp` between '"+request1.getTimestamp() + "' and '"+request1.getEndTimestamp()+"'";
 			
 			//If no Parameter is given
 			if(request1.getParameter()==null)
@@ -132,6 +132,7 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 				List<Integer> intervalIdList = new ArrayList<Integer>();
 				List<Integer> upList = new ArrayList<Integer>();
 				List<Integer> downList = new ArrayList<Integer>();
+				List<Integer> zoneList = new ArrayList<Integer>();
 				
 				while (rs.next()) {
 					timestampsList.add(rs.getString(1));
@@ -139,6 +140,7 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 					intervalIdList.add(rs.getInt(3));
 					upList.add(rs.getInt(4));
 					downList.add(rs.getInt(5));
+					zoneList.add(rs.getInt(6));
 					
 				}
 	
@@ -148,6 +150,7 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 				data.setIntervalId(intervalIdList.toArray(new Integer[intervalIdList.size()]));
 				data.setUp(upList.toArray(new Integer[upList.size()]));
 				data.setDown(downList.toArray(new Integer[downList.size()]));
+				data.setZoneId(zoneList.toArray(new Integer[zoneList.size()]));
 				response.setData(data);
 			}
 			else{
@@ -160,7 +163,8 @@ public class RequestCapacityRequirementHandler implements RequestHandler {
 					int interval = rs.getInt(3);
 					String timestamp = rs.getString(1);
 					int up = rs.getInt(4);
-					capacityRequirement = new CapacityRequirement(timestamp,confidence,interval, up, down);
+					int zoneId = rs.getInt(6);
+					capacityRequirement = new CapacityRequirement(timestamp,confidence,interval, up, down,zoneId);
 					list.add(capacityRequirement);
 				}
 				response.setData(list);

@@ -50,16 +50,20 @@ public class RequestHAInterchangeSchedule extends Request {
 	
 	private static final long serialVersionUID = -5900188809843654748L;
 	
-	public String startTimestamp;
-	public String endTimeStamp;
+	String startTimestamp;
+	String endTimeStamp;
+	int zoneId;
+	boolean viz=false;
 	
-	public RequestHAInterchangeSchedule(String startTimestamp){
+	public RequestHAInterchangeSchedule(String startTimestamp, int zoneId){
 		this.startTimestamp = startTimestamp;
+		this.zoneId = zoneId;
 	}
 	
-	public RequestHAInterchangeSchedule(String startTimestamp,String endTiemstamp){
+	public RequestHAInterchangeSchedule(String startTimestamp,String endTiemstamp, int zoneId){
 		this.startTimestamp = startTimestamp;
 		this.endTimeStamp = endTiemstamp;
+		this.zoneId = zoneId;
 	}
 	
 	
@@ -75,6 +79,22 @@ public class RequestHAInterchangeSchedule extends Request {
 	public void setEndTimeStamp(String endTimeStamp) {
 		this.endTimeStamp = endTimeStamp;
 	}
+
+	public int getZoneId() {
+		return zoneId;
+	}
+
+	public void setZoneId(int zoneId) {
+		this.zoneId = zoneId;
+	}
+	public boolean isViz() {
+		return viz;
+	}
+
+	public void setViz(boolean viz) {
+		this.viz = viz;
+	}
+	
 	
 
 }
